@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoBossManager"
+        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         mc:Ignorable="d"
         Title="AutoBoss Manager - Multi-Instance Bot Controller"
         Height="800" Width="1400"
@@ -352,6 +353,31 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
+                    </DockPanel>
+                </Border>
+            </TabItem>
+
+            <!-- ============ ANALYTICS TAB (task 16.3) ============ -->
+            <TabItem Header="📊 Analytics">
+                <Border Margin="0,8,0,8" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,8,10,4">
+                            <Button Content="🔄 Refresh" Click="BtnAnalyticsRefresh_Click"
+                                    Padding="10,4" Background="#3B82F6" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"/>
+                            <Button Content="📤 Export CSV" Command="{Binding Analytics.ExportCsvCommand}"
+                                    Margin="10,0,0,0" Padding="10,4" Background="#10B981" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"/>
+                            <TextBlock Text="{Binding Analytics.Summary}" Foreground="#F59E0B"
+                                       VerticalAlignment="Center" Margin="16,0,0,0" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Analytics.TopBossesText}" Foreground="#C084FC"
+                                       VerticalAlignment="Center" Margin="16,0,0,0"/>
+                        </StackPanel>
+
+                        <lvc:CartesianChart Series="{Binding Analytics.Series}"
+                                            XAxes="{Binding Analytics.XAxes}"
+                                            LegendPosition="Top"
+                                            Margin="10,4,10,10"/>
                     </DockPanel>
                 </Border>
             </TabItem>

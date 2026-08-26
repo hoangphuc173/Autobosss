@@ -42,6 +42,9 @@ namespace AutoBossManager.ViewModels
 
         private readonly DispatcherTimer _refreshTimer;
         private readonly Services.ProfileManager _profileManager;
+
+        // === Analytics tab VM (task 16.3) ===
+        public ViewModels.AnalyticsViewModel Analytics { get; }
         private int _connectedClientCount;
         private int _totalBossKills;
         private TimeSpan _totalUptime;
@@ -113,9 +116,10 @@ namespace AutoBossManager.ViewModels
         public event EventHandler<string>? GlobalCommandRequested;
 
         // === Constructor ===
-        public MainViewModel(Services.ProfileManager profileManager)
+        public MainViewModel(Services.ProfileManager profileManager, Services.AnalyticsEngine analyticsEngine)
         {
             _profileManager = profileManager ?? throw new ArgumentNullException(nameof(profileManager));
+            Analytics = new ViewModels.AnalyticsViewModel(analyticsEngine ?? throw new ArgumentNullException(nameof(analyticsEngine)));
 
             BotInstances = new ObservableCollection<BotInstanceViewModel>();
             LogEntries = new ObservableCollection<LogEntry>();

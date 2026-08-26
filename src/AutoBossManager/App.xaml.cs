@@ -41,8 +41,10 @@ namespace AutoBossManager
                 var analytics = provider.GetRequiredService<AnalyticsEngine>();
                 var mainWindow = new MainWindow(mainViewModel);
 
-                // Wire up SocketServer events to MainViewModel + AnalyticsEngine
-                WireUpSocketServerEvents(socketServer, mainViewModel, analytics, mainWindow);
+            // Wire up SocketServer events to MainViewModel + AnalyticsEngine
+            WireUpSocketServerEvents(socketServer, mainViewModel, analytics, mainWindow);
+            ViewModels.AnalyticsViewModel.MainStatusProxy =
+                msg => mainViewModel.StatusMessage = msg;
 
                 return mainWindow;
             });

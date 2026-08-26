@@ -131,5 +131,62 @@ namespace AutoBossManager.Services
                 return $"Analytics: {TotalKills} kills ({KillsPerHour:F1}/h), {TotalErrors} errors ({ErrorsPerKill:F2}/kill)";
             }
         }
+
+        // === Du lieu cho Analytics Dashboard (task 16.3) ===
+
+        /// <summary>
+        /// So kill theo tung gio trong window (moi nhat cuoi).
+        /// Tra ve dung so bucket = hours; bucket khong co kill = 0.
+        /// </summary>
+        public IReadOnlyList<(string HourLabel, int Count)> GetKillsPerHourBuckets(int hours = 12)
+        {
+            var result = new List<(string, int)>(hours);
+            var now = DateTime.Now;
+            var hourStart = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0);
+
+            lock (_lock)
+            {
+                for (int i = hours - 1; i >= 0; i--)
+                {
+                    var start = hourStart.AddHours(-i);
+                    var end = start.AddHours(1);
+                    int count = _events.Count(e =>
+                        e.Kind == EventKind.BossKilled &&
+                        e.Timestamp >= start && e.Timestamp < end);
+                    result.Add((start.ToString("HH:mm"), count));
+                }
+            }
+            return result;
+        }
+
+        /// <summary>Tong kill cua tung bot instance (short id), sap xep giam dan.</summary>
+        public IReadOnlyList<(string InstanceId, int Kills)> GetKillsByInstance()
+        {
+            lock (_lock)
+            {
+                return _events
+                    .Where(e => e.Kind == EventKind.BossKilled)
+                    .GroupBy(e => e.InstanceId.ToString("N")[..8])
+                    .OrderByDescending(g => g.Count())
+                    .Select(g => (g.Key, g.Count()))
+                    .ToList();
+            }
+        }
+
+        /// <summary>Xuat toan bo event dang giu thanh CSV (boss kills chi tiet).</summary>
+        public string ExportCsv()
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("timestamp,instanceId,kind,detail");
+            lock (_lock)
+            {
+                foreach (var e in _events.OrderBy(e => e.Timestamp))
+                {
+                    var detail = (e.Detail ?? "").Replace('"', '\'');
+                    sb.AppendLine($"{e.Timestamp:yyyy-MM-dd HH:mm:ss},{e.InstanceId:N},{e.Kind},\"{detail}\"");
+                }
+            }
+            return sb.ToString();
+        }
     }
 }

@@ -49,5 +49,10 @@ namespace AutoBossManager
         {
             _viewModel.LogEntries.Clear();
         }
+
+        private void BtnAnalyticsRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.Analytics.Refresh();
+        }
     }
 }

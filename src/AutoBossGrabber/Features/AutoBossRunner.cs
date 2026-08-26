@@ -298,6 +298,18 @@ public class AutoBossRunner : MonoBehaviour
         else
             Plugin.Log.LogWarning($"[AutoBoss] MessageHook: no profile matched for '{info}', using current config");
 
+        // === BFS direct route (task 12.2): thu di bang BFS truoc, fallback legacy chain ===
+        if (Config.EnableBfsNavigation && profile?.BossMapNames is { Count: > 0 })
+        {
+            var bossMap = profile.BossMapNames[_currentMapIndex < profile.BossMapNames.Count ? _currentMapIndex : 0];
+            if (TryTeleportToMapViaBfs(bossMap))
+            {
+                Transition(AutoBossState.TeleportToBossMap); // RunTeleportToBossMap se cho navigation xong
+                return;
+            }
+            Plugin.Log.LogWarning("[AutoBoss] BFS khong tim duoc duong -> fallback portal chain legacy");
+        }
+
         Plugin.Log.LogWarning("[AutoBoss] *** AUTO-STARTING TOOL *** (boss detected via message hook)");
         EnableAutoFarmMode();
     }
@@ -611,6 +623,27 @@ public class AutoBossRunner : MonoBehaviour
 
     // Cờ: lần teleport tiếp theo sẽ thử trực tiếp đến Cung (không qua Planet Plant)
     private bool _tryDirectToCung = false;
+    // === BFS navigation state (task 12) ===
+    private bool _bfsNavigating;
+
+    /// <summary>
+    /// Nho SocketClient tinh duong BFS den targetMap va bat dau di portal tu dong.
+    /// Tra ve false khi tat tinh nang / khong co duong -> nguoi goi dung legacy chain.
+    /// </summary>
+    private bool TryTeleportToMapViaBfs(string targetMap)
+    {
+        if (!Config.EnableBfsNavigation) return false;
+        var sc = Plugin.Instance?.SocketClient;
+        if (sc == null) return false;
+
+        var ok = sc.RequestNavigationTo(targetMap);
+        if (ok)
+        {
+            _bfsNavigating = true;
+            Plugin.Log.LogWarning($"[AutoBoss] BFS navigation started -> '{targetMap}'");
+        }
+        return ok;
+    }
 
     private string GetFastTravelMapName(string targetMap)
     {
@@ -658,6 +691,16 @@ public class AutoBossRunner : MonoBehaviour
 
     private void RunTeleportToBossMap()
     {
+        // === BFS navigation (task 12): neu da giao cho NavigationController thi cho xong ===
+        if (_bfsNavigating)
+        {
+            var sc = Plugin.Instance?.SocketClient;
+            if (sc != null && sc.IsNavigationInProgress) return; // dang di portal tu dong
+            _bfsNavigating = false;
+            Plugin.Log.LogInfo("[AutoBoss] BFS navigation finished -> continue normal flow");
+            // roi vao flow thong thuong ben duoi (thuong la da den gan boss map)
+        }
+
         if (Config.BossMapNames == null || _currentMapIndex >= Config.BossMapNames.Count)
         {
             _teleportInProgress = false;

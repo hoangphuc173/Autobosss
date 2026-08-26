@@ -365,32 +365,10 @@ public class SocketClient : MonoBehaviour
                 {
                     string targetMap = mapObj.ToString();
                     Plugin.Log.LogInfo($"[SocketClient] TELEPORT_TO_MAP command received: {targetMap}");
-                    
-                    // Compute path using BFS (Requirements: 4.1, 4.2, 4.3, 4.4)
-                    var path = _pathfinder.ComputePath(targetMap);
-                    
-                    // Initialize NavigationController with actual graph after first path
-                    if (_navigationController == null && _pathfinder.Graph != null)
+
+                    if (!RequestNavigationTo(targetMap))
                     {
-                        _navigationController = new NavigationController(_pathfinder.Graph);
-                        Plugin.Log.LogInfo("[SocketClient] NavigationController initialized with graph");
-                    }
-                    
-                    if (path == null)
-                    {
-                        Plugin.Log.LogError($"[SocketClient] No path found to map: {targetMap}");
                         SendError($"Map unreachable or unknown: {targetMap}");
-                    }
-                    else
-                    {
-                        Plugin.Log.LogInfo($"[SocketClient] Path computed: {path.Count} hops");
-                        
-                        // Execute navigation (Requirements: 4.8, 5.1)
-                        _currentNavigationPath = path;
-                        this.StartCoroutine("ExecuteNavigationPath");
-                        
-                        // Send acknowledgment
-                        SendAck($"Navigating to {targetMap}");
                     }
                 }
                 else
@@ -844,4 +822,47 @@ public class SocketClient : MonoBehaviour
     {
         return _navigationController.ExecutePath(_currentNavigationPath);
     }
+
+    // === BFS navigation public API (task 12.2) ===
+
+    /// <summary>
+    /// Tinh duong BFS tu map hien tai den targetMapName va bat dau di chuyen qua portal.
+    /// PHAI goi tren Unity main thread (StartCoroutine).
+    /// Tra ve true neu co duong di va navigation da bat dau; false khi khong tim duoc
+    /// duong (nguoi goi se fallback sang portal chain legacy).
+    /// </summary>
+    public bool RequestNavigationTo(string targetMapName)
+    {
+        if (string.IsNullOrEmpty(targetMapName)) return false;
+
+        try
+        {
+            var path = _pathfinder.ComputePath(targetMapName);
+
+            if (_navigationController == null && _pathfinder.Graph != null)
+            {
+                _navigationController = new NavigationController(_pathfinder.Graph);
+                Plugin.Log.LogInfo("[SocketClient] NavigationController initialized with graph");
+            }
+
+            if (path == null)
+            {
+                Plugin.Log.LogWarning($"[SocketClient] BFS: no path to '{targetMapName}'");
+                return false;
+            }
+
+            Plugin.Log.LogInfo($"[SocketClient] BFS path computed: {path.Count} hops -> navigating");
+            _currentNavigationPath = path;
+            StartCoroutine("ExecuteNavigationPath");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogError($"[SocketClient] RequestNavigationTo fail: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>Có phien navigation nao dang chay khong.</summary>
+    public bool IsNavigationInProgress => _navigationController?.IsNavigating ?? false;
 }

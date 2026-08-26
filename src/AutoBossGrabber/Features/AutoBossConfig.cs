@@ -49,6 +49,9 @@ public class AutoBossConfig
     // === Crash recovery (task 22) ===
     public bool EnableAutoRestartResume = false; // tu dong resume farming khi state con fresh (<5 phut)
 
+    // === BFS navigation (task 12) ===
+    public bool EnableBfsNavigation = false; // di chuyen qua portal bang BFS thay vi portal chain cung (opt-in)
+
     // === Multi-boss profiles ===
     // Khi nhận thông báo boss, tool tự khớp text với BossNames của từng profile
     // rồi áp dụng route tương ứng.

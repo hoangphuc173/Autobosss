@@ -544,6 +544,30 @@ public class SocketClient : MonoBehaviour
             // === Item filter hot-reload (task 14) - Manager gui tu ProfileManager ===
             ApplyItemFilterConfig(message, ref updatesApplied);
 
+            // === Farm loop flags hot-reload (task 13.7) ===
+            try
+            {
+                if (message.Payload.TryGetValue("enableAutoZoneSwitch", out object azs))
+                {
+                    config.EnableAutoZoneSwitch = Convert.ToBoolean(azs);
+                    updatesApplied++;
+                }
+                if (message.Payload.TryGetValue("enableAutoReward", out object ar))
+                {
+                    config.EnableAutoReward = Convert.ToBoolean(ar);
+                    updatesApplied++;
+                }
+                if (message.Payload.TryGetValue("enableAutoSatellite", out object sat))
+                {
+                    config.EnableAutoSatellite = Convert.ToBoolean(sat);
+                    updatesApplied++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.Log.LogWarning($"[SocketClient] Failed to apply farm loop flags: {ex.Message}");
+            }
+
             Plugin.Log.LogInfo($"[SocketClient] Config updated successfully ({updatesApplied} parameters changed)");
         }
         catch (Exception ex)

@@ -31,6 +31,10 @@ public class AutoBossRunner : MonoBehaviour
     public AutoBossConfig Config;
     public AutoBossState State = AutoBossState.Idle;
 
+    // === Farm loop extras (task 13): reward popup / satellite / analytics ===
+    private readonly FarmExtras _farm = new FarmExtras();
+    private float _farmTickTimer;
+
     // === Debug switches (mac dinh TAT cho production) ===
     // Bat len true neu can UI dump tu dong 8s/20s/40s sau khi attach.
     public bool EnableDebugAutoDump = false;
@@ -339,6 +343,21 @@ public class AutoBossRunner : MonoBehaviour
 
         // Auto Item loop
         AutoItemManager.Instance.Update(Config);
+
+        // Farm loop extras (task 13) - tick 1s/lan de tranh scan UI moi frame
+        _farmTickTimer += Time.deltaTime;
+        if (_farmTickTimer >= 1f)
+        {
+            _farmTickTimer = 0f;
+            if (Config.EnableAutoReward) _farm.TryClaimRewardPopup();
+            if (Config.EnableAutoSatellite &&
+                (State == AutoBossState.FarmTown || State == AutoBossState.ZoneScanLoop))
+            {
+                _farm.TryUseSatellite(Config);
+            }
+            var farmStats = _farm.SendAnalyticsIfDue(Config.Enabled);
+            if (farmStats != null) Plugin.Log.LogInfo($"[FarmExtras] {farmStats}");
+        }
 
         _stateTimer += Time.deltaTime;
 
@@ -1225,6 +1244,7 @@ public class AutoBossRunner : MonoBehaviour
                 _zoneSwitchTimer = 0f;
                 _zoneAttempts++;
                 _captchaTriggered = false;
+                if (Config.EnableAutoZoneSwitch) _farm.OnZoneCleared();
                 if (_zoneAttempts % 5 == 0 || _zoneAttempts == 1)
                     Plugin.Log.LogInfo($"[AutoBoss] Khu {ZoneSwitcher.LastClickedZoneIndex} confirmed (#{_zoneAttempts})");
 
@@ -1264,6 +1284,7 @@ public class AutoBossRunner : MonoBehaviour
             _enteredZoneAt = Time.time;
             _zoneAttempts++;
             _captchaTriggered = false;
+            if (Config.EnableAutoZoneSwitch) _farm.OnZoneCleared();
 
             if (_zoneAttempts % 5 == 0 || _zoneAttempts == 1)
                 Plugin.Log.LogInfo($"[AutoBoss] Khu {ZoneSwitcher.LastClickedZoneIndex} confirmed (#{_zoneAttempts})");

@@ -36,6 +36,12 @@ public class AutoBossConfig
     public bool AutoDetectBossNotification = true;
     public bool AutoFusion = true;  // Tự động hợp thể (nút P) khi tool chạy
 
+    // === Farm loop (task 13) ===
+    public bool EnableAutoZoneSwitch = true;   // tu dong sang khu ke tiep khi khu het quai
+    public bool EnableAutoReward = true;       // tu dong bam popup nhan thuong
+    public bool EnableAutoSatellite = false;   // tu dong dung item satellite (tang exp)
+    public List<int> SatelliteItemIds = new List<int>(); // id item satellite trong hanh trang
+
     // === Multi-boss profiles ===
     // Khi nhận thông báo boss, tool tự khớp text với BossNames của từng profile
     // rồi áp dụng route tương ứng.

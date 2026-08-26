@@ -11,7 +11,7 @@ namespace AutoBossShared
     public class IpcMessage
     {
         [JsonProperty("type")]
-        public string Type { get; set; }
+        public string Type { get; set; } = string.Empty;
         
         [JsonProperty("timestamp")]
         public DateTime Timestamp { get; set; }

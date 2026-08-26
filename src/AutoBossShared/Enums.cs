@@ -1,5 +1,3 @@
-using System;
-
 namespace AutoBossShared
 {
     /// <summary>
@@ -37,18 +35,27 @@ namespace AutoBossShared
     }
 
     /// <summary>
-    /// AutoBoss state machine states.
-    /// Mirrors the existing AutoBossRunner state machine.
+    /// State machine cua AutoBossRunner (plugin).
+    /// DAY LA NGUON DUY NHAT cho ca hai phia:
+    /// - Plugin gan/truyen runner.State (ten state gui qua STATUS_UPDATE)
+    /// - Manager Enum.TryParse dung dung bo ten nay -> khong con lech IPC.
     /// </summary>
     public enum AutoBossState
     {
         Idle,
-        DetectBoss,
-        MoveToBoss,
+        FarmTown,
+        TeleportToBossMap,
+        WalkToPortal,
         ZoneScanLoop,
-        EngageBoss,
-        CombatActive,
-        LootItems,
-        ReturnHome
+        MoveToBoss,
+        CombatBoss,
+        LootDrops,
+        ReturnToFarmMap,
+        ReverseWalkToFarm,
+        RestoreFarmZone,
+        ResumeFarming,
+        TeleportHome,
+        SolveCaptcha,
+        DeadRecovery
     }
 }

@@ -65,12 +65,28 @@ namespace AutoBossManager.Helpers
 
         public bool CanExecute(object? parameter)
         {
-            return _canExecute == null || _canExecute((T?)parameter);
+            return _canExecute == null || _canExecute(CastParameter(parameter));
         }
 
         public void Execute(object? parameter)
         {
-            _execute((T?)parameter);
+            _execute(CastParameter(parameter));
+        }
+
+        /// <summary>
+        /// Cast an toan: parameter sai kieu tra ve default thay vi nem InvalidCastException.
+        /// </summary>
+        private static T? CastParameter(object? parameter)
+        {
+            if (parameter is T typed)
+            {
+                return typed;
+            }
+            if (parameter == null)
+            {
+                return default;
+            }
+            return default;
         }
 
         public void RaiseCanExecuteChanged()

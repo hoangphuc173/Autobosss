@@ -90,13 +90,12 @@ namespace AutoBossManager
                 });
             };
 
-            // Log events
+            // Log events - surface in status bar (Console.WriteLine is invisible in a WPF app)
             socketServer.OnLogEvent += (sender, e) =>
             {
                 mainWindow.Dispatcher.Invoke(() =>
                 {
-                    // Log events can be displayed in a log viewer (future enhancement)
-                    Console.WriteLine($"[{e.InstanceId}] {e.Level}: {e.Message}");
+                    mainViewModel.StatusMessage = $"[{e.Level}] {e.Message}";
                 });
             };
 
@@ -155,6 +154,9 @@ namespace AutoBossManager
 
         protected override void OnExit(ExitEventArgs e)
         {
+            // Stop UI refresh timer first (must run on UI thread)
+            _serviceProvider?.GetService<MainViewModel>()?.Shutdown();
+
             // Stop SocketServer before disposing services
             var socketServer = _serviceProvider?.GetService<SocketServer>();
             socketServer?.Stop();

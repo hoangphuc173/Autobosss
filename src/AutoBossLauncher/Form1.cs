@@ -11,10 +11,10 @@ namespace AutoBossLauncher
 {
     public partial class Form1 : Form
     {
-        private string accountsFilePath;
-        private string gameExePath;
-        private AccountsFile currentAccounts;
-        private CancellationTokenSource pipeServerCts;
+        private string accountsFilePath = "accounts.json";
+        private string gameExePath = "";
+        private AccountsFile currentAccounts = new AccountsFile();
+        private CancellationTokenSource pipeServerCts = new CancellationTokenSource();
 
         public Form1()
         {
@@ -26,23 +26,24 @@ namespace AutoBossLauncher
 
         private void FindPaths()
         {
-            // Default assumes Launcher is placed next to "Vũ Trụ Đại Chiến.exe"
-            // For dev, it might be in source\AutoBossLauncher\bin\Debug\net6.0-windows\
+            // Deployed: Launcher nam canh "Vũ Trụ Đại Chiến.exe" trong runtime/.
+            // Dev: exe o <repoRoot>\runtime\ (5 cap tren tu bin\Debug\net6.0-windows).
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string devPath = Path.Combine(baseDir, "..", "..", "..", "..", "..");
-            
+            string repoRoot = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", ".."));
+            string runtimeDir = Path.Combine(repoRoot, "runtime");
+
             string exe1 = Path.GetFullPath(Path.Combine(baseDir, "Vũ Trụ Đại Chiến.exe"));
-            string exe2 = Path.GetFullPath(Path.Combine(devPath, "Vũ Trụ Đại Chiến.exe"));
+            string exe2 = Path.GetFullPath(Path.Combine(runtimeDir, "Vũ Trụ Đại Chiến.exe"));
 
             if (File.Exists(exe1))
             {
                 gameExePath = exe1;
-                accountsFilePath = Path.GetFullPath(Path.Combine(baseDir, "BepInEx", "plugins", "accounts.json"));
+                accountsFilePath = Path.Combine(Path.GetDirectoryName(exe1)!, "BepInEx", "plugins", "accounts.json");
             }
             else if (File.Exists(exe2))
             {
                 gameExePath = exe2;
-                accountsFilePath = Path.GetFullPath(Path.Combine(devPath, "BepInEx", "plugins", "accounts.json"));
+                accountsFilePath = Path.Combine(runtimeDir, "BepInEx", "plugins", "accounts.json");
             }
             else
             {
@@ -63,7 +64,7 @@ namespace AutoBossLauncher
                         AllowTrailingCommas = true,
                         ReadCommentHandling = JsonCommentHandling.Skip
                     };
-                    currentAccounts = JsonSerializer.Deserialize<AccountsFile>(json, options);
+                    currentAccounts = JsonSerializer.Deserialize<AccountsFile>(json, options) ?? new AccountsFile();
                     
                     if (currentAccounts?.Accounts != null)
                     {
@@ -168,7 +169,11 @@ namespace AutoBossLauncher
                             {
                                 while (!reader.EndOfStream && !pipeServerCts.Token.IsCancellationRequested)
                                 {
-                                    string line = await reader.ReadLineAsync();
+                                    string? line = await reader.ReadLineAsync();
+                                    if (line == null)
+                                    {
+                                        break; // pipe closed
+                                    }
                                     if (!string.IsNullOrEmpty(line))
                                     {
                                         AppendLog(line);

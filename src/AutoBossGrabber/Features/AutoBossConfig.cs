@@ -99,12 +99,3 @@ public class AutoBossConfig
     public List<int> AutoDropItemIds = new List<int>();
     public float AutoItemDelaySec = 4.0f;
 }
-
-public class SkillTrigger
-{
-    /// <summary>Dùng skill khi HP boss &lt;= giá trị này (HP thật, ví dụ 200000).</summary>
-    public float HpThreshold = 100000f;
-
-    /// <summary>Phím số gán skill (1-4).</summary>
-    public int SkillKey = 1;
-}

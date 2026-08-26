@@ -104,9 +104,14 @@ namespace AutoBossManager.ViewModels
             };
             _refreshTimer.Tick += RefreshTimer_Tick;
             _refreshTimer.Start();
+        }
 
-            // Add sample data for testing
-            // InitializeSampleData();
+        /// <summary>
+        /// Stop background timer. Must be called on UI thread (app exit).
+        /// </summary>
+        public void Shutdown()
+        {
+            _refreshTimer.Stop();
         }
 
         // === Public Methods ===
@@ -136,13 +141,12 @@ namespace AutoBossManager.ViewModels
             if (existing != null)
             {
                 existing.UpdateFromState(state);
+                RefreshStatistics();
             }
             else
             {
                 AddBotInstance(state);
             }
-
-            RefreshStatistics();
         }
 
         /// <summary>
@@ -223,76 +227,32 @@ namespace AutoBossManager.ViewModels
 
         private void ExecuteAddBot()
         {
-            // Placeholder - will be implemented when profile manager is added
-            StatusMessage = "Add Bot feature coming in Task 7...";
+            // TODO: mo Add-Bot dialog (chon profile -> launch game instance).
+            StatusMessage = "Add Bot: chua ho tro trong phien ban nay.";
         }
 
         private void BotInstance_CommandRequested(object? sender, string command)
         {
-            if (sender is BotInstanceViewModel botVm && _socketServer != null)
+            if (sender is not BotInstanceViewModel botVm)
             {
-                // Send command to specific bot instance via SocketServer
-                _socketServer.SendCommand(botVm.InstanceId, command);
-                StatusMessage = $"Command {command} sent to {botVm.AccountName}";
+                return;
             }
-        }
 
-        /// <summary>
-        /// Initialize sample data for UI testing
-        /// </summary>
-        private void InitializeSampleData()
-        {
-            // Add 3 sample bot instances for testing
-            var sample1 = new BotInstanceState
+            if (_socketServer == null)
             {
-                InstanceId = Guid.NewGuid(),
-                AccountName = "TestBot01",
-                Status = ConnectionStatus.Active,
-                CurrentState = AutoBossState.MoveToBoss,
-                CurrentMap = "Cung Điện",
-                CurrentZone = 5,
-                PlayerHpPct = 85.5f,
-                PlayerMpPct = 92.0f,
-                BossKillsThisSession = 12,
-                SessionStartTime = DateTime.Now.AddHours(-1.5),
-                LastBossKilled = "Vua Vegita"
-            };
-            AddBotInstance(sample1);
+                StatusMessage = $"Khong gui duoc {command}: server chua khoi dong.";
+                return;
+            }
 
-            var sample2 = new BotInstanceState
+            if (!_socketServer.GetConnectedClients().Contains(botVm.InstanceId))
             {
-                InstanceId = Guid.NewGuid(),
-                AccountName = "TestBot02",
-                Status = ConnectionStatus.Active,
-                CurrentState = AutoBossState.EngageBoss,
-                CurrentMap = "Sa Mạc",
-                CurrentZone = 3,
-                PlayerHpPct = 62.0f,
-                PlayerMpPct = 78.5f,
-                BossKillsThisSession = 8,
-                SessionStartTime = DateTime.Now.AddMinutes(-45),
-                LastBossKilled = "Cooler"
-            };
-            AddBotInstance(sample2);
+                StatusMessage = $"Khong gui duoc {command}: {botVm.AccountName} da mat ket noi.";
+                return;
+            }
 
-            var sample3 = new BotInstanceState
-            {
-                InstanceId = Guid.NewGuid(),
-                AccountName = "TestBot03",
-                Status = ConnectionStatus.Paused,
-                CurrentState = AutoBossState.Idle,
-                CurrentMap = "Làng Kakarot",
-                CurrentZone = 1,
-                PlayerHpPct = 100.0f,
-                PlayerMpPct = 100.0f,
-                BossKillsThisSession = 0,
-                SessionStartTime = DateTime.Now.AddMinutes(-10),
-                LastBossKilled = ""
-            };
-            AddBotInstance(sample3);
-
-            RefreshStatistics();
-            StatusMessage = "Sample data loaded (3 test bots)";
+            // Send command to specific bot instance via SocketServer
+            _socketServer.SendCommand(botVm.InstanceId, command);
+            StatusMessage = $"Command {command} sent to {botVm.AccountName}";
         }
 
         // === INotifyPropertyChanged ===

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -39,7 +39,8 @@ namespace AutoBossManager.Services
         // === Task 8.1: Basic CRUD Operations ===
 
         /// <summary>
-        /// Save a bot profile to disk with validation
+        /// Save a bot profile to disk with validation.
+        /// Password duoc ma hoa DPAPI truoc khi ghi.
         /// </summary>
         public void SaveProfile(BotProfile profile)
         {
@@ -52,12 +53,15 @@ namespace AutoBossManager.Services
             }
 
             var filePath = GetProfilePath(profile.AccountName);
-            var json = JsonConvert.SerializeObject(profile, Formatting.Indented);
+
+            // Serialize ban sao co password da ma hoa - khong bao gio ghi plaintext.
+            var toPersist = CloneWithProtectedPassword(profile);
+            var json = JsonConvert.SerializeObject(toPersist, Formatting.Indented);
             File.WriteAllText(filePath, json);
         }
 
         /// <summary>
-        /// Load a bot profile from disk
+        /// Load a bot profile from disk (password duoc giai ma ve plaintext in-memory).
         /// </summary>
         public BotProfile? LoadProfile(string accountName)
         {
@@ -69,7 +73,7 @@ namespace AutoBossManager.Services
             }
 
             var json = File.ReadAllText(filePath);
-            return JsonConvert.DeserializeObject<BotProfile>(json);
+            return DecryptLoadedProfile(JsonConvert.DeserializeObject<BotProfile>(json));
         }
 
         /// <summary>
@@ -85,7 +89,7 @@ namespace AutoBossManager.Services
                 try
                 {
                     var json = File.ReadAllText(file);
-                    var profile = JsonConvert.DeserializeObject<BotProfile>(json);
+                    var profile = DecryptLoadedProfile(JsonConvert.DeserializeObject<BotProfile>(json));
                     if (profile != null)
                     {
                         profiles.Add(profile);
@@ -163,9 +167,9 @@ namespace AutoBossManager.Services
                 result.IsValid = false;
             }
 
-            if (profile.AttackRange < 0.3f || profile.AttackRange > 10f)
+            if (profile.AttackRange < 0.3f || profile.AttackRange > 50f)
             {
-                result.Errors.Add("AttackRange must be between 0.3 and 10");
+                result.Errors.Add("AttackRange must be between 0.3 and 50 (game units)");
                 result.IsValid = false;
             }
 
@@ -175,9 +179,9 @@ namespace AutoBossManager.Services
                 result.IsValid = false;
             }
 
-            if (profile.LootRadius < 0.5f || profile.LootRadius > 20f)
+            if (profile.LootRadius < 0.5f || profile.LootRadius > 1000f)
             {
-                result.Errors.Add("LootRadius must be between 0.5 and 20");
+                result.Errors.Add("LootRadius must be between 0.5 and 1000 (game units)");
                 result.IsValid = false;
             }
 
@@ -189,15 +193,22 @@ namespace AutoBossManager.Services
             }
 
             // Boss skill triggers validation (REQ 14.6)
+            // HpThreshold la HP TUYET DOI cua boss (vi du 500000), khong phai phan tram.
             if (profile.BossSkillTriggers != null && profile.BossSkillTriggers.Count > 0)
             {
                 for (int i = 0; i < profile.BossSkillTriggers.Count; i++)
                 {
                     var trigger = profile.BossSkillTriggers[i];
 
-                    if (trigger.HpThreshold < 0f || trigger.HpThreshold > 100f)
+                    if (trigger.HpThreshold < 0f)
                     {
-                        result.Errors.Add($"Skill trigger #{i + 1}: HpThreshold must be between 0% and 100%");
+                        result.Errors.Add($"Skill trigger #{i + 1}: HpThreshold must be >= 0 (absolute boss HP)");
+                        result.IsValid = false;
+                    }
+
+                    if (trigger.SkillKey < 1 || trigger.SkillKey > 4)
+                    {
+                        result.Errors.Add($"Skill trigger #{i + 1}: SkillKey must be 1-4");
                         result.IsValid = false;
                     }
 
@@ -276,7 +287,7 @@ namespace AutoBossManager.Services
                         }
 
                         // Handle duplicates
-                        if (ProfileExists(profile.AccountName))
+                        if (!string.IsNullOrEmpty(profile.AccountName) && ProfileExists(profile.AccountName))
                         {
                             switch (duplicateHandling)
                             {
@@ -303,7 +314,7 @@ namespace AutoBossManager.Services
                         else
                         {
                             SaveProfile(profile);
-                            result.ImportedProfiles.Add(profile.AccountName);
+                            result.ImportedProfiles.Add(profile.AccountName ?? "Unknown");
                             Console.WriteLine($"[ProfileManager] Imported: {profile.AccountName}");
                         }
                     }
@@ -426,6 +437,31 @@ namespace AutoBossManager.Services
             }
 
             return newName;
+        }
+
+        // === Password Protection Helpers ===
+
+        /// <summary>
+        /// Tao ban sao cua profile voi password da ma hoa DPAPI de ghi ra dia.
+        /// </summary>
+        private static BotProfile CloneWithProtectedPassword(BotProfile profile)
+        {
+            var clone = JsonConvert.DeserializeObject<BotProfile>(
+                JsonConvert.SerializeObject(profile)) ?? profile;
+            clone.Password = PasswordProtector.Protect(profile.Password ?? string.Empty);
+            return clone;
+        }
+
+        /// <summary>
+        /// Giai ma password (DPAPI hoac legacy plaintext) sau khi doc tu dia.
+        /// </summary>
+        private static BotProfile? DecryptLoadedProfile(BotProfile? profile)
+        {
+            if (profile != null && !string.IsNullOrEmpty(profile.Password))
+            {
+                profile.Password = PasswordProtector.Unprotect(profile.Password);
+            }
+            return profile;
         }
 
         // === IDisposable ===

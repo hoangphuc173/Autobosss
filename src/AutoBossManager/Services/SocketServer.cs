@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -22,45 +23,45 @@ namespace AutoBossManager.Services
         private const int HeartbeatCheckIntervalMs = 5000;
 
         // === Server State ===
-        private TcpListener listener;
+        private TcpListener? listener;
         private ConcurrentDictionary<Guid, ClientConnection> clients;
-        private CancellationTokenSource cts;
-        private Task acceptTask;
-        private Task heartbeatTask;
+        private CancellationTokenSource? cts;
+        private Task? acceptTask;
+        private Task? heartbeatTask;
         private bool isRunning = false;
         private readonly object startStopLock = new object();
 
         // === Events for MainViewModel Integration ===
-        
+
         /// <summary>
         /// Raised when a client sends a status update.
         /// </summary>
-        public event EventHandler<StatusUpdateEventArgs> OnStatusUpdate;
-        
+        public event EventHandler<StatusUpdateEventArgs>? OnStatusUpdate;
+
         /// <summary>
         /// Raised when a client reports a boss found.
         /// </summary>
-        public event EventHandler<BossFoundEventArgs> OnBossFound;
-        
+        public event EventHandler<BossFoundEventArgs>? OnBossFound;
+
         /// <summary>
         /// Raised when a client sends a log event.
         /// </summary>
-        public event EventHandler<LogEventArgs> OnLogEvent;
-        
+        public event EventHandler<LogEventArgs>? OnLogEvent;
+
         /// <summary>
         /// Raised when a client reports an error.
         /// </summary>
-        public event EventHandler<ErrorEventArgs> OnError;
-        
+        public event EventHandler<ErrorEventArgs>? OnError;
+
         /// <summary>
         /// Raised when a client disconnects.
         /// </summary>
-        public event EventHandler<Guid> OnClientDisconnected;
-        
+        public event EventHandler<Guid>? OnClientDisconnected;
+
         /// <summary>
         /// Raised when a new client connects.
         /// </summary>
-        public event EventHandler<ClientConnectedEventArgs> OnClientConnected;
+        public event EventHandler<ClientConnectedEventArgs>? OnClientConnected;
 
         // === Initialization ===
 
@@ -142,7 +143,7 @@ namespace AutoBossManager.Services
                 // Wait for background tasks to complete
                 try
                 {
-                    Task.WaitAll(new[] { acceptTask, heartbeatTask }, TimeSpan.FromSeconds(5));
+                    Task.WaitAll(new[] { acceptTask, heartbeatTask }.Where(t => t != null).Select(t => t!).ToArray(), TimeSpan.FromSeconds(5));
                 }
                 catch (Exception ex)
                 {
@@ -163,11 +164,19 @@ namespace AutoBossManager.Services
         {
             Console.WriteLine("[SocketServer] Accept loop started");
 
-            while (isRunning && !cts.Token.IsCancellationRequested)
+            TcpListener? acceptedListener = listener;
+            CancellationTokenSource? tokenSource = cts;
+
+            if (acceptedListener == null || tokenSource == null)
+            {
+                return;
+            }
+
+            while (isRunning && !tokenSource.Token.IsCancellationRequested)
             {
                 try
                 {
-                    TcpClient tcpClient = await listener.AcceptTcpClientAsync();
+                    TcpClient tcpClient = await acceptedListener.AcceptTcpClientAsync();
                     Guid instanceId = Guid.NewGuid();
 
                     Console.WriteLine($"[SocketServer] Client connecting: {instanceId}");
@@ -193,10 +202,10 @@ namespace AutoBossManager.Services
                     // Listener was stopped, exit gracefully
                     break;
                 }
-                catch (Exception ex) when (!cts.Token.IsCancellationRequested)
+                catch (Exception ex) when (!tokenSource.Token.IsCancellationRequested)
                 {
                     Console.WriteLine($"[SocketServer] Accept error: {ex.Message}");
-                    await Task.Delay(1000, cts.Token); // Brief delay before retry
+                    await Task.Delay(1000, tokenSource.Token); // Brief delay before retry
                 }
             }
 
@@ -211,11 +220,17 @@ namespace AutoBossManager.Services
         {
             Console.WriteLine("[SocketServer] Heartbeat monitor started");
 
-            while (isRunning && !cts.Token.IsCancellationRequested)
+            CancellationTokenSource? tokenSource = cts;
+            if (tokenSource == null)
+            {
+                return;
+            }
+
+            while (isRunning && !tokenSource.Token.IsCancellationRequested)
             {
                 try
                 {
-                    await Task.Delay(HeartbeatCheckIntervalMs, cts.Token);
+                    await Task.Delay(HeartbeatCheckIntervalMs, tokenSource.Token);
 
                     var now = DateTime.Now;
                     foreach (var kvp in clients)
@@ -251,9 +266,14 @@ namespace AutoBossManager.Services
         /// Handle incoming message from a client connection.
         /// Task 7.5: Message Routing and Event Raising
         /// </summary>
-        private void ClientConnection_OnMessage(object sender, IpcMessage message)
+        private void ClientConnection_OnMessage(object? sender, IpcMessage message)
         {
-            var clientConn = (ClientConnection)sender;
+            var clientConn = sender as ClientConnection;
+            if (clientConn == null)
+            {
+                return;
+            }
+
             Guid instanceId = clientConn.InstanceId;
 
             try
@@ -270,41 +290,41 @@ namespace AutoBossManager.Services
                         break;
 
                     case MessageTypes.BOSS_FOUND:
-                        string bossName = message.Payload.TryGetValue("bossName", out var bn) ? bn.ToString() : "";
-                        string mapName = message.Payload.TryGetValue("mapName", out var mn) ? mn.ToString() : "";
-                        string zoneName = message.Payload.TryGetValue("zoneName", out var zn) ? zn.ToString() : "";
+                        string bossName = message.Payload.TryGetValue("bossName", out var bn) ? bn?.ToString() ?? "" : "";
+                        string mapName = message.Payload.TryGetValue("mapName", out var mn) ? mn?.ToString() ?? "" : "";
+                        string zoneName = message.Payload.TryGetValue("zoneName", out var zn) ? zn?.ToString() ?? "" : "";
                         OnBossFound?.Invoke(this, new BossFoundEventArgs(instanceId, bossName, mapName, zoneName));
                         break;
 
                     case MessageTypes.BOSS_KILLED:
-                        string killedBoss = message.Payload.TryGetValue("bossName", out var kb) ? kb.ToString() : "";
-                        float killDuration = message.Payload.TryGetValue("killDurationSec", out var kd) 
+                        string killedBoss = message.Payload.TryGetValue("bossName", out var kb) ? kb?.ToString() ?? "" : "";
+                        float killDuration = message.Payload.TryGetValue("killDurationSec", out var kd)
                             ? Convert.ToSingle(kd) : 0f;
                         // Could add OnBossKilled event if needed
-                        OnLogEvent?.Invoke(this, new LogEventArgs(instanceId, 
+                        OnLogEvent?.Invoke(this, new LogEventArgs(instanceId,
                             $"Boss killed: {killedBoss} in {killDuration:F1}s"));
                         break;
 
                     case MessageTypes.LOG_EVENT:
-                        string logMsg = message.Payload.TryGetValue("message", out var lm) ? lm.ToString() : "";
-                        string logLevel = message.Payload.TryGetValue("level", out var ll) ? ll.ToString() : "Info";
+                        string logMsg = message.Payload.TryGetValue("message", out var lm) ? lm?.ToString() ?? "" : "";
+                        string logLevel = message.Payload.TryGetValue("level", out var ll) ? ll?.ToString() ?? "Info" : "Info";
                         OnLogEvent?.Invoke(this, new LogEventArgs(instanceId, logMsg, logLevel));
                         break;
 
                     case MessageTypes.ERROR:
-                        string errorMsg = message.Payload.TryGetValue("message", out var em) ? em.ToString() : "";
+                        string errorMsg = message.Payload.TryGetValue("message", out var em) ? em?.ToString() ?? "" : "";
                         OnError?.Invoke(this, new ErrorEventArgs(instanceId, errorMsg));
                         break;
 
                     case MessageTypes.CAPTCHA_DETECTED:
-                        OnLogEvent?.Invoke(this, new LogEventArgs(instanceId, 
+                        OnLogEvent?.Invoke(this, new LogEventArgs(instanceId,
                             "Captcha detected - attempting auto-solve", "Warning"));
                         break;
 
                     case MessageTypes.ACK:
                         // Acknowledgment received - could track for command confirmation
-                        string ackedType = message.Payload.TryGetValue("acknowledgedType", out var at) 
-                            ? at.ToString() : "";
+                        string ackedType = message.Payload.TryGetValue("acknowledgedType", out var at)
+                            ? at?.ToString() ?? "" : "";
                         Console.WriteLine($"[SocketServer] ACK received from {instanceId}: {ackedType}");
                         break;
 
@@ -342,7 +362,7 @@ namespace AutoBossManager.Services
 
                 if (message.Payload.TryGetValue("map", out var mapObj))
                 {
-                    state.CurrentMap = mapObj.ToString();
+                    state.CurrentMap = mapObj?.ToString() ?? "";
                 }
 
                 if (message.Payload.TryGetValue("zone", out var zoneObj))
@@ -367,12 +387,12 @@ namespace AutoBossManager.Services
 
                 if (message.Payload.TryGetValue("currentTarget", out var targetObj))
                 {
-                    state.LastBossKilled = targetObj.ToString();
+                    state.LastBossKilled = targetObj?.ToString() ?? "";
                 }
 
                 if (message.Payload.TryGetValue("accountName", out var accObj))
                 {
-                    state.AccountName = accObj.ToString();
+                    state.AccountName = accObj?.ToString() ?? "";
                 }
 
                 if (message.Payload.TryGetValue("sessionStartTime", out var sessionObj))
@@ -381,15 +401,10 @@ namespace AutoBossManager.Services
                 }
 
                 // Set status based on state
-                state.Status = state.CurrentState switch
-                {
-                    AutoBossState.Idle => ConnectionStatus.Connected,
-                    AutoBossState.DetectBoss or AutoBossState.MoveToBoss or 
-                    AutoBossState.ZoneScanLoop or AutoBossState.EngageBoss or 
-                    AutoBossState.CombatActive or AutoBossState.LootItems or 
-                    AutoBossState.ReturnHome => ConnectionStatus.Active,
-                    _ => ConnectionStatus.Connected
-                };
+                // Idle = connected but not farming; every other runner state is active work.
+                state.Status = state.CurrentState == AutoBossState.Idle
+                    ? ConnectionStatus.Connected
+                    : ConnectionStatus.Active;
             }
             catch (Exception ex)
             {
@@ -402,7 +417,7 @@ namespace AutoBossManager.Services
         /// <summary>
         /// Handle client disconnection event.
         /// </summary>
-        private void ClientConnection_OnDisconnected(object sender, Guid instanceId)
+        private void ClientConnection_OnDisconnected(object? sender, Guid instanceId)
         {
             clients.TryRemove(instanceId, out _);
             Console.WriteLine($"[SocketServer] Client disconnected: {instanceId}");
@@ -415,7 +430,7 @@ namespace AutoBossManager.Services
         /// Send a command to a specific client.
         /// Task 7.6: Command Sending Methods
         /// </summary>
-        public void SendCommand(Guid instanceId, string command, System.Collections.Generic.Dictionary<string, object> parameters = null)
+        public void SendCommand(Guid instanceId, string command, System.Collections.Generic.Dictionary<string, object>? parameters = null)
         {
             if (!clients.TryGetValue(instanceId, out var clientConn))
             {
@@ -449,7 +464,7 @@ namespace AutoBossManager.Services
         /// Broadcast a command to all connected clients.
         /// Task 7.6: Command Sending Methods
         /// </summary>
-        public void BroadcastCommand(string command, System.Collections.Generic.Dictionary<string, object> parameters = null)
+        public void BroadcastCommand(string command, System.Collections.Generic.Dictionary<string, object>? parameters = null)
         {
             var message = new IpcMessage(MessageTypes.COMMAND);
             message.Payload["command"] = command;
@@ -579,12 +594,12 @@ namespace AutoBossManager.Services
         private TcpClient client;
         private StreamReader reader;
         private StreamWriter writer;
-        private Task receiveTask;
+        private Task? receiveTask;
         private bool isRunning = false;
         private CancellationTokenSource cts;
 
-        public event EventHandler<IpcMessage> OnMessage;
-        public event EventHandler<Guid> OnDisconnected;
+        public event EventHandler<IpcMessage>? OnMessage;
+        public event EventHandler<Guid>? OnDisconnected;
 
         public ClientConnection(Guid instanceId, TcpClient tcpClient)
         {
@@ -618,7 +633,7 @@ namespace AutoBossManager.Services
             {
                 while (isRunning && !cts.Token.IsCancellationRequested)
                 {
-                    string line = await reader.ReadLineAsync();
+                    string? line = await reader.ReadLineAsync();
                     if (line == null)
                     {
                         // Connection closed by client
@@ -629,14 +644,17 @@ namespace AutoBossManager.Services
                     try
                     {
                         var message = JsonConvert.DeserializeObject<IpcMessage>(line);
-                        
-                        // Update heartbeat timestamp
-                        if (message.Type == MessageTypes.HEARTBEAT)
+
+                        if (message != null)
                         {
-                            LastHeartbeat = DateTime.Now;
+                            // Update heartbeat timestamp
+                            if (message.Type == MessageTypes.HEARTBEAT)
+                            {
+                                LastHeartbeat = DateTime.Now;
+                            }
+
+                            OnMessage?.Invoke(this, message);
                         }
-                        
-                        OnMessage?.Invoke(this, message);
                     }
                     catch (JsonException ex)
                     {

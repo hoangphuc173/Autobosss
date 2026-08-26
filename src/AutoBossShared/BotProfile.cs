@@ -12,77 +12,77 @@ namespace AutoBossShared
     {
         // === Identity ===
         [JsonProperty("accountName")]
-        public string AccountName { get; set; }
-        
+        public string AccountName { get; set; } = string.Empty;
+
         [JsonProperty("gameExecutablePath")]
-        public string GameExecutablePath { get; set; }
-        
+        public string GameExecutablePath { get; set; } = string.Empty;
+
         // === Game Credentials ===
         [JsonProperty("username")]
-        public string Username { get; set; }
-        
+        public string Username { get; set; } = string.Empty;
+
         [JsonProperty("password")]
-        public string Password { get; set; }  // Encrypted in storage
-        
+        public string Password { get; set; } = string.Empty;  // Encrypted at rest (DPAPI)
+
         // === Boss Hunting Configuration ===
         [JsonProperty("targetBossNames")]
-        public List<string> TargetBossNames { get; set; }
-        
+        public List<string> TargetBossNames { get; set; } = new();
+
         [JsonProperty("bossMapNames")]
-        public List<string> BossMapNames { get; set; }
-        
+        public List<string> BossMapNames { get; set; } = new();
+
         [JsonProperty("homeMapName")]
-        public string HomeMapName { get; set; }
-        
+        public string HomeMapName { get; set; } = string.Empty;
+
         [JsonProperty("townMapName")]
-        public string TownMapName { get; set; }
-        
+        public string TownMapName { get; set; } = string.Empty;
+
         [JsonProperty("fastTravelAnchorMap")]
-        public string FastTravelAnchorMap { get; set; }
-        
+        public string FastTravelAnchorMap { get; set; } = string.Empty;
+
         [JsonProperty("portalChainMaps")]
-        public List<string> PortalChainMaps { get; set; }
-        
+        public List<string> PortalChainMaps { get; set; } = new();
+
         // === Behavior Parameters ===
         [JsonProperty("maxZoneAttempts")]
         public int MaxZoneAttempts { get; set; }
-        
+
         [JsonProperty("attackRange")]
         public float AttackRange { get; set; }
-        
+
         [JsonProperty("combatTimeoutSec")]
         public float CombatTimeoutSec { get; set; }
-        
+
         [JsonProperty("retreatHpPct")]
         public float RetreatHpPct { get; set; }
-        
+
         [JsonProperty("lootRadius")]
         public float LootRadius { get; set; }
-        
+
         // === Strategy Preset ===
         [JsonProperty("strategy")]
         public StrategyPreset Strategy { get; set; }
-        
+
         // === Boss Skill Configuration ===
         [JsonProperty("bossSkillTriggers")]
-        public List<SkillTrigger> BossSkillTriggers { get; set; }
-        
+        public List<SkillTrigger> BossSkillTriggers { get; set; } = new();
+
         // === Farm Loop Configuration ===
         [JsonProperty("enableAutoZoneSwitch")]
         public bool EnableAutoZoneSwitch { get; set; }
-        
+
         [JsonProperty("enableAutoReward")]
         public bool EnableAutoReward { get; set; }
-        
+
         [JsonProperty("enableAutoSatellite")]
         public bool EnableAutoSatellite { get; set; }
-        
+
         // === Item Filter Configuration ===
         [JsonProperty("filterMode")]
         public ItemFilterMode FilterMode { get; set; }
-        
+
         [JsonProperty("itemFilterList")]
-        public List<string> ItemFilterList { get; set; }
+        public List<string> ItemFilterList { get; set; } = new();
         
         [JsonProperty("alwaysPickGems")]
         public bool AlwaysPickGems { get; set; }
@@ -102,7 +102,7 @@ namespace AutoBossShared
         
         // === Schedule Configuration (Phase 2) ===
         [JsonProperty("schedule")]
-        public Schedule Schedule { get; set; }
+        public Schedule Schedule { get; set; } = new();
         
         public BotProfile()
         {
@@ -114,10 +114,10 @@ namespace AutoBossShared
             Strategy = StrategyPreset.Balanced;
             FilterMode = ItemFilterMode.Disabled;
             MaxZoneAttempts = 15;
-            AttackRange = 100f;
-            CombatTimeoutSec = 30f;
-            RetreatHpPct = 30f;
-            LootRadius = 150f;
+            AttackRange = 2.5f;      // game units - dong bo voi AutoBossConfig cua plugin
+            CombatTimeoutSec = 60f;
+            RetreatHpPct = 20f;
+            LootRadius = 200f;       // game units
             AlwaysPickGems = true;
             AlwaysPickQuestItems = true;
             MinRarityToPickup = 0;

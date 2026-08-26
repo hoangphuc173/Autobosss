@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Pipes;
 using System.Threading.Tasks;
@@ -22,6 +22,7 @@ public class Plugin : BasePlugin
     public GameOptimizer Optimizer { get; private set; }
     public SocketClient SocketClient { get; private set; }
 
+    private static readonly object pipeLock = new object();
     private static StreamWriter pipeWriter;
 
     private static void ConnectToLauncherPipe()
@@ -32,8 +33,12 @@ public class Plugin : BasePlugin
             {
                 var pipeClient = new NamedPipeClientStream(".", "AutoBossLauncherPipe", PipeDirection.Out, PipeOptions.Asynchronous);
                 pipeClient.Connect(3000); // Wait up to 3s for the launcher
-                pipeWriter = new StreamWriter(pipeClient) { AutoFlush = true };
-                pipeWriter.WriteLine("[AutoBossGrabber] Plugin connected to Launcher!");
+                var writer = new StreamWriter(pipeClient) { AutoFlush = true };
+                lock (pipeLock)
+                {
+                    pipeWriter = writer;
+                }
+                writer.WriteLine("[AutoBossGrabber] Plugin connected to Launcher!");
             }
             catch (Exception)
             {
@@ -44,15 +49,31 @@ public class Plugin : BasePlugin
 
     public static void SendLogToLauncher(string message)
     {
-        if (pipeWriter != null)
+        // Log events co the den tu bat ky thread nao -> phai lock de tranh
+        // race voi viec connect/replace writer tu background task.
+        StreamWriter writer;
+        lock (pipeLock)
         {
-            try
+            writer = pipeWriter;
+        }
+
+        if (writer == null)
+        {
+            return;
+        }
+
+        try
+        {
+            writer.WriteLine(message);
+        }
+        catch
+        {
+            lock (pipeLock)
             {
-                pipeWriter.WriteLine(message);
-            }
-            catch
-            {
-                pipeWriter = null;
+                if (ReferenceEquals(pipeWriter, writer))
+                {
+                    pipeWriter = null;
+                }
             }
         }
     }
@@ -104,8 +125,8 @@ public class Plugin : BasePlugin
             var harmony = new Harmony("com.autobossgrabber.vtdc");
             
             // Pattern t? Tool_Om_Boss (verified Update() tick):
-            // ((BasePlugin)this).AddComponent<T>() attach v�o gameObject c?a BepInEx plugin �
-            // gameObject d� n?m trong DontDestroyOnLoad v� Update() du?c Unity loop g?i b�nh thu?ng.
+            // ((BasePlugin)this).AddComponent<T>() attach vï¿½o gameObject c?a BepInEx plugin ï¿½
+            // gameObject dï¿½ n?m trong DontDestroyOnLoad vï¿½ Update() du?c Unity loop g?i bï¿½nh thu?ng.
             ((BasePlugin)this).AddComponent<AutoBossRunner>();
             ((BasePlugin)this).AddComponent<AutoBossUI>();
             ((BasePlugin)this).AddComponent<AutoLoginController>();

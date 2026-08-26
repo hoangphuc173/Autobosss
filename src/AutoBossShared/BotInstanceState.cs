@@ -13,9 +13,9 @@ namespace AutoBossShared
         // === Identity ===
         [JsonProperty("instanceId")]
         public Guid InstanceId { get; set; }
-        
+
         [JsonProperty("accountName")]
-        public string AccountName { get; set; }
+        public string AccountName { get; set; } = string.Empty;
         
         // === Connection Status ===
         [JsonProperty("status")]
@@ -32,7 +32,7 @@ namespace AutoBossShared
         public AutoBossState CurrentState { get; set; }
         
         [JsonProperty("currentMap")]
-        public string CurrentMap { get; set; }
+        public string CurrentMap { get; set; } = string.Empty;
         
         [JsonProperty("currentZone")]
         public int CurrentZone { get; set; }
@@ -71,7 +71,7 @@ namespace AutoBossShared
         public DateTime LastBossKillTime { get; set; }
         
         [JsonProperty("lastBossKilled")]
-        public string LastBossKilled { get; set; }
+        public string LastBossKilled { get; set; } = string.Empty;
         
         // === Calculated Metrics (not serialized) ===
         [JsonIgnore]

@@ -11,6 +11,17 @@ using AutoBossShared;
 
 namespace AutoBossManager.ViewModels
 {
+    /// <summary>Mot entry trong hang doi captcha (task 23.3).</summary>
+    public class CaptchaEntry
+    {
+        public DateTime Time { get; set; } = DateTime.Now;
+        public string Account { get; set; } = "";
+        public string Status { get; set; } = "Auto-solving";
+        public Guid InstanceId { get; set; }
+
+        public string TimeFormatted => Time.ToString("HH:mm:ss");
+    }
+
     /// <summary>
     /// Mot dong log trong panel Logs.
     /// </summary>
@@ -82,6 +93,7 @@ namespace AutoBossManager.ViewModels
         // === Observable Collections ===
         public ObservableCollection<BotInstanceViewModel> BotInstances { get; }
         public ObservableCollection<LogEntry> LogEntries { get; }
+        public ObservableCollection<CaptchaEntry> CaptchaQueue { get; }
 
         // === Selected bot (cho shortcut Space = Start/Stop) ===
         private BotInstanceViewModel? _selectedBot;
@@ -176,6 +188,7 @@ namespace AutoBossManager.ViewModels
 
             BotInstances = new ObservableCollection<BotInstanceViewModel>();
             LogEntries = new ObservableCollection<LogEntry>();
+            CaptchaQueue = new ObservableCollection<CaptchaEntry>();
 
             // Initialize commands
             StartAllCommand = new RelayCommand(_ => ExecuteStartAll());
@@ -420,6 +433,38 @@ namespace AutoBossManager.ViewModels
             }
         }
 
+        // === Captcha queue (task 23.3) ===
+
+        public void AddCaptcha(Guid instanceId)
+        {
+            var vm = BotInstances.FirstOrDefault(b => b.InstanceId == instanceId);
+            CaptchaQueue.Insert(0, new CaptchaEntry
+            {
+                InstanceId = instanceId,
+                Account = vm?.AccountName ?? ShortId(instanceId),
+                Status = "Auto-solving (CNN)",
+            });
+            while (CaptchaQueue.Count > 50) CaptchaQueue.RemoveAt(CaptchaQueue.Count - 1);
+        }
+
+        public void MarkCaptchaStatus(Guid instanceId, string status)
+        {
+            var e = CaptchaQueue.FirstOrDefault(c => c.InstanceId == instanceId && c.Status.StartsWith("Auto"));
+            if (e != null) e.Status = status;
+        }
+
+        /// <summary>Retry = bao bot resume de python solver thu lai o popup ke tiep.</summary>
+        public void RetryCaptcha(CaptchaEntry entry)
+        {
+            if (_socketServer == null || !_socketServer.GetConnectedClients().Contains(entry.InstanceId))
+            {
+                StatusMessage = "Retry captcha that bai: bot offline.";
+                return;
+            }
+            _socketServer.SendCommand(entry.InstanceId, Commands.RESUME);
+            entry.Status = "Retry sent";
+            StatusMessage = "Da gui RESUME cho bot de thu giai lai captcha.";
+        }
         private static string ShortId(Guid id) =>
             id.ToString("N")[..8];
 

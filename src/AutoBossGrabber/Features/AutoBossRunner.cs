@@ -1274,6 +1274,7 @@ public class AutoBossRunner : MonoBehaviour
             if (!_captchaTriggered && _stateTimer > 0.5f)
             {
                 _captchaTriggered = true;
+                try { Plugin.Instance.SocketClient?.SendCaptchaDetected(); } catch { }
                 CaptchaManager.TriggerScan();
             }
             _currentBoss = boss;
@@ -1433,6 +1434,7 @@ public class AutoBossRunner : MonoBehaviour
             if (!_captchaTriggered && _stateTimer > 0.1f)
             {
                 _captchaTriggered = true;
+                try { Plugin.Instance.SocketClient?.SendCaptchaDetected(); } catch { }
                 CaptchaManager.TriggerScan();
             }
             // Khu này CÓ BOSS -> Theo logic của user: "captcha sẽ hiện khi nhân vật chuyển vào khu boss"

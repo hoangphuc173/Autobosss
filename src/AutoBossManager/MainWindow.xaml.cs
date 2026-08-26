@@ -112,6 +112,14 @@ namespace AutoBossManager
             }
         }
 
+        private void BtnRetryCaptcha_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: CaptchaEntry entry })
+            {
+                _viewModel.RetryCaptcha(entry);
+            }
+        }
+
         private void BtnAnalyticsRefresh_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.Analytics.Refresh();

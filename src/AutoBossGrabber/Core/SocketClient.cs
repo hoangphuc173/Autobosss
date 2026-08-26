@@ -695,6 +695,22 @@ public class SocketClient : MonoBehaviour
         }
     }
     
+    /// <summary>Bao Manager biet bot gap captcha (task 23.1).</summary>
+    public void SendCaptchaDetected()
+    {
+        try
+        {
+            var message = new IpcMessage(MessageTypes.CAPTCHA_DETECTED);
+            message.Payload["timestamp"] = DateTime.UtcNow.ToString("o");
+            WriteMessage(message);
+            Plugin.Log.LogInfo("[SocketClient] Sent CAPTCHA_DETECTED");
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogWarning($"[SocketClient] SendCaptchaDetected failed: {ex.Message}");
+        }
+    }
+
     public void SendBossKilled(string bossName, float killDurationSec)
     {
         try

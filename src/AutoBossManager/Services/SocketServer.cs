@@ -68,6 +68,11 @@ namespace AutoBossManager.Services
         /// </summary>
         public event EventHandler<ClientConnectedEventArgs>? OnClientConnected;
 
+        /// <summary>
+        /// Raised when an ACK is received (for IPC reliability tests).
+        /// </summary>
+        public event EventHandler<AckEventArgs>? OnAckReceived;
+
         // === Initialization ===
 
         public SocketServer()
@@ -145,10 +150,14 @@ namespace AutoBossManager.Services
                 }
                 clients.Clear();
 
-                // Wait for background tasks to complete
+                // Wait for background tasks to complete (cancellation is expected)
                 try
                 {
                     Task.WaitAll(new[] { acceptTask, heartbeatTask }.Where(t => t != null).Select(t => t!).ToArray(), TimeSpan.FromSeconds(5));
+                }
+                catch (AggregateException ex) when (ex.InnerExceptions.All(e => e is OperationCanceledException || e is TaskCanceledException))
+                {
+                    // Expected when cts.Cancel() aborts Accept/Heartbeat loops
                 }
                 catch (Exception ex)
                 {
@@ -205,6 +214,18 @@ namespace AutoBossManager.Services
                 catch (ObjectDisposedException)
                 {
                     // Listener was stopped, exit gracefully
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (IOException) when (tokenSource.Token.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (SocketException) when (tokenSource.Token.IsCancellationRequested)
+                {
                     break;
                 }
                 catch (Exception ex) when (!tokenSource.Token.IsCancellationRequested)
@@ -331,6 +352,7 @@ namespace AutoBossManager.Services
                         string ackedType = message.Payload.TryGetValue("acknowledgedType", out var at)
                             ? at?.ToString() ?? "" : "";
                         Console.WriteLine($"[SocketServer] ACK received from {instanceId}: {ackedType}");
+                        OnAckReceived?.Invoke(this, new AckEventArgs(instanceId, ackedType));
                         break;
 
                     default:
@@ -814,6 +836,18 @@ namespace AutoBossManager.Services
         public ClientConnectedEventArgs(Guid instanceId)
         {
             InstanceId = instanceId;
+        }
+    }
+
+    public class AckEventArgs : EventArgs
+    {
+        public Guid InstanceId { get; }
+        public string AckedType { get; }
+
+        public AckEventArgs(Guid instanceId, string ackedType)
+        {
+            InstanceId = instanceId;
+            AckedType = ackedType;
         }
     }
 }

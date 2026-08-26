@@ -1,11 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
+    <!-- Cho phep tham chieu Manager (net6.0-windows) tu test -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +24,8 @@
   <ItemGroup>
     <!-- Plugin + Shared (transitively pulls AutoBossShared) -->
     <ProjectReference Include="..\..\src\AutoBossGrabber\AutoBossGrabber.csproj" />
+    <!-- Manager services (LogAggregator...) -->
+    <ProjectReference Include="..\..\src\AutoBossManager\AutoBossManager.csproj" />
   </ItemGroup>
 
   <ItemGroup>

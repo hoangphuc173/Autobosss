@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using AutoBossManager.ViewModels;
@@ -27,6 +27,7 @@ namespace AutoBossManager
         {
             // Register services
             services.AddSingleton<ProfileManager>();
+            services.AddSingleton<LogAggregator>();
             services.AddSingleton<AnalyticsEngine>();
             services.AddSingleton<SocketServer>();
 
@@ -39,10 +40,11 @@ namespace AutoBossManager
                 var mainViewModel = provider.GetRequiredService<MainViewModel>();
                 var socketServer = provider.GetRequiredService<SocketServer>();
                 var analytics = provider.GetRequiredService<AnalyticsEngine>();
-                var mainWindow = new MainWindow(mainViewModel);
+                var logAggregator = provider.GetRequiredService<LogAggregator>();
+                var mainWindow = new MainWindow(mainViewModel, logAggregator);
 
             // Wire up SocketServer events to MainViewModel + AnalyticsEngine
-            WireUpSocketServerEvents(socketServer, mainViewModel, analytics, mainWindow);
+            WireUpSocketServerEvents(socketServer, mainViewModel, analytics, logAggregator, mainWindow);
             ViewModels.AnalyticsViewModel.MainStatusProxy =
                 msg => mainViewModel.StatusMessage = msg;
 
@@ -54,7 +56,7 @@ namespace AutoBossManager
         /// Wire up SocketServer events to MainViewModel for real-time updates.
         /// Task 7.6: Integration with MainViewModel
         /// </summary>
-        private void WireUpSocketServerEvents(SocketServer socketServer, MainViewModel mainViewModel, AnalyticsEngine analytics, MainWindow mainWindow)
+        private void WireUpSocketServerEvents(SocketServer socketServer, MainViewModel mainViewModel, AnalyticsEngine analytics, LogAggregator logAggregator, MainWindow mainWindow)
         {
             // Status updates - update bot instance state
             socketServer.OnStatusUpdate += (sender, e) =>
@@ -165,7 +167,9 @@ namespace AutoBossManager
             }
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        private static string ShortId(Guid id) => id.ToString("N")[..Math.Min(8, id.ToString("N").Length)];
+
+    protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
@@ -178,6 +182,9 @@ namespace AutoBossManager
         {
             // Stop UI refresh timer first (must run on UI thread)
             _serviceProvider?.GetService<MainViewModel>()?.Shutdown();
+
+            // Flush + close log file handles (task 17.8 graceful shutdown)
+            _serviceProvider?.GetService<LogAggregator>()?.Dispose();
 
             // Stop SocketServer before disposing services
             var socketServer = _serviceProvider?.GetService<SocketServer>();

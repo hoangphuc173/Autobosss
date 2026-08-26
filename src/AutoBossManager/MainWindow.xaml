@@ -335,6 +335,15 @@
                                     Margin="12,0,0,0" Padding="10,4" Background="#4A5568" Foreground="White"
                                     BorderThickness="0" Cursor="Hand"/>
 
+                            <TextBlock Text="🔍" Foreground="#A0AEC0" VerticalAlignment="Center" Margin="16,0,4,0"/>
+                            <TextBox x:Name="TxtLogSearch" Width="180" Background="#1F1F27" Foreground="White"
+                                     BorderBrush="#3F3F4E" Padding="6,3"
+                                     KeyDown="TxtLogSearch_KeyDown"/>
+
+                            <Button x:Name="BtnExportLogs" Content="📤 Export" Click="BtnExportLogs_Click"
+                                    Margin="12,0,0,0" Padding="10,4" Background="#10B981" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"/>
+
                             <TextBlock Text="{Binding LogEntries.Count, StringFormat='{}{0} entries'}"
                                        Foreground="#60A5FA" VerticalAlignment="Center" Margin="16,0,0,0"/>
                         </StackPanel>

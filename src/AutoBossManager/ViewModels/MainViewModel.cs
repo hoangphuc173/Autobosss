@@ -50,6 +50,7 @@ namespace AutoBossManager.ViewModels
         private TimeSpan _totalUptime;
         private string _statusMessage = "Ready";
         private Services.SocketServer? _socketServer;
+        private Services.ProcessLauncherService? _launcher;
 
         // === Global Pause (task 21.4): chan moi bot khoi farm ===
         private bool _globalPause;
@@ -162,6 +163,7 @@ namespace AutoBossManager.ViewModels
         public ICommand ClearLogsCommand { get; }
         public ICommand GlobalPauseCommand { get; }
         public ICommand ToggleSelectedBotCommand { get; }
+        public ICommand LaunchAllCommand { get; }
 
         // === Events ===
         public event EventHandler<string>? GlobalCommandRequested;
@@ -184,6 +186,7 @@ namespace AutoBossManager.ViewModels
             ClearLogsCommand = new RelayCommand(_ => LogEntries.Clear());
             GlobalPauseCommand = new RelayCommand(_ => GlobalPause = !GlobalPause);
             ToggleSelectedBotCommand = new RelayCommand(_ => ToggleSelectedBot());
+            LaunchAllCommand = new RelayCommand(_ => ExecuteLaunchAll());
 
             // Set up refresh timer (1 second interval)
             _refreshTimer = new DispatcherTimer
@@ -279,6 +282,45 @@ namespace AutoBossManager.ViewModels
         public void SetSocketServer(Services.SocketServer socketServer)
         {
             _socketServer = socketServer;
+        }
+
+        /// <summary>Inject launcher cho Launch All (task 24).</summary>
+        public void SetProcessLauncher(Services.ProcessLauncherService launcher)
+        {
+            _launcher = launcher;
+            if (_launcher != null)
+            {
+                _launcher.Notify = (account, msg, isErr) =>
+                    AppendLog(isErr ? "Error" : "Info", $"[Launcher] {account}: {msg}", Guid.Empty);
+            }
+        }
+
+        /// <summary>Launch tat ca profile da luu (task 24.4 bulk launch).</summary>
+        private void ExecuteLaunchAll()
+        {
+            if (_launcher == null)
+            {
+                StatusMessage = "Launcher chua san sang.";
+                return;
+            }
+
+            var profiles = _profileManager.LoadAllProfiles();
+            if (profiles.Count == 0)
+            {
+                StatusMessage = "Chua co profile nao - dung Add Bot de tao truoc.";
+                return;
+            }
+
+            int ok = 0, skip = 0, fail = 0;
+            foreach (var p in profiles)
+            {
+                var result = _launcher.Launch(p);
+                if (result.Success) ok++;
+                else if (result.Message.Contains("đang chạy")) skip++;
+                else { fail++; AppendLog("Error", $"[Launcher] {p.AccountName}: {result.Message}", Guid.Empty); }
+            }
+
+            StatusMessage = $"🚀 Launch All: {ok} mới, {skip} đang chạy, {fail} lỗi";
         }
 
         // === Private Methods ===

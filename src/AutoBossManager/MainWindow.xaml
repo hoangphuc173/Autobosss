@@ -187,6 +187,7 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button Content="▶ Start All" Command="{Binding StartAllCommand}" Style="{StaticResource SuccessButtonStyle}"/>
+                    <Button Content="🚀 Launch All" Command="{Binding LaunchAllCommand}" Style="{StaticResource ActionButtonStyle}" Background="#0EA5E9"/>
                     <Button Content="⏸ Stop All" Command="{Binding StopAllCommand}" Style="{StaticResource WarningButtonStyle}"/>
                 </StackPanel>
 

@@ -650,7 +650,8 @@ public class SocketClient : MonoBehaviour
         
         try
         {
-            string json = JsonConvert.SerializeObject(message);
+            // Use Formatting.None overload to avoid IL2CPP stripping of single-arg overload
+            string json = JsonConvert.SerializeObject(message, Formatting.None);
             writer.WriteLine(json);
         }
         catch (Exception ex)

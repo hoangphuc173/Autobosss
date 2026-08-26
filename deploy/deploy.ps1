@@ -101,6 +101,12 @@ Get-ChildItem $targetPath -Filter "AutoBoss*.dll" -ErrorAction SilentlyContinue 
 
 # --- 4. Copy DLL moi ---
 Write-Host "`n[*] Copying plugin DLLs..." -ForegroundColor Yellow
+# Newtonsoft.Json is required at runtime for IPC serialization (IL2CPP interop version is not sufficient)
+$njSrc = Join-Path $sourcePath "Newtonsoft.Json.dll"
+if (Test-Path $njSrc) {
+    Copy-Item $njSrc $targetPath -Force
+    Write-Host "[+] Newtonsoft.Json.dll ($([math]::Round((Get-Item (Join-Path $targetPath "Newtonsoft.Json.dll")).Length/1KB, 2)) KB)" -ForegroundColor Green
+}
 foreach ($file in @("AutoBossGrabber.dll", "AutoBossShared.dll")) {
     $src = Join-Path $sourcePath $file
     if (Test-Path $src) {

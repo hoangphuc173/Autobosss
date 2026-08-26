@@ -46,6 +46,11 @@ public class AutoBossRunner : MonoBehaviour
     private int _combatFailStreak;
     private const int CombatFailSafetyLimit = 5;
 
+    // === State persistence (task 22) ===
+    private float _stateSaveTimer;
+    private bool _autoResumePending;
+    private int _restoredZoneAttempts;
+
     // === Debug switches (mac dinh TAT cho production) ===
     // Bat len true neu can UI dump tu dong 8s/20s/40s sau khi attach.
     public bool EnableDebugAutoDump = false;
@@ -160,10 +165,22 @@ public class AutoBossRunner : MonoBehaviour
         gameObject.AddComponent<VirtualMouse>();
         CaptchaManager.StartPythonBot();
 
-        // Cố định kích thước cửa sổ game để Bot Python nhận diện và click chuẩn xác
-        // Tắt ép buộc độ phân giải 1000x500 vì AI bot có thể nhận diện ở mọi kích thước
-        // Screen.SetResolution(1000, 500, false);
+        // === State persistence (task 22): don dep file cu + kiem tra resume sau crash ===
+        StatePersistence.CleanupOldFiles(TimeSpan.FromHours(24));
+        try
+        {
+            var persisted = StatePersistence.TryLoad();
+            if (persisted != null && persisted.IsFresh(DateTime.Now)
+                && Config.EnableAutoRestartResume)
+            {
+                Plugin.Log.LogInfo($"[AutoBoss] Fresh persisted state (map='{persisted.Map}') -> se auto-resume farming");
+                _autoResumePending = true;
+                _restoredZoneAttempts = persisted.ZoneAttempts;
+            }
+        }
+        catch { }
     }
+
 
     private void OnDestroy()
     {
@@ -368,6 +385,34 @@ public class AutoBossRunner : MonoBehaviour
             }
             var farmStats = _farm.SendAnalyticsIfDue(Config.Enabled);
             if (farmStats != null) Plugin.Log.LogInfo($"[FarmExtras] {farmStats}");
+        }
+
+        // === State persistence (task 22.2): save moi 30s khi bot dang chay ===
+        _stateSaveTimer += Time.deltaTime;
+        if (_stateSaveTimer >= 30f)
+        {
+            _stateSaveTimer = 0f;
+            string curMap = GameAPI.GetCurrentMapFromMiniMap();
+            if (string.IsNullOrEmpty(curMap)) curMap = GameAPI.GetCurrentMapName();
+            StatePersistence.Save(new PersistedBotState
+            {
+                State = State.ToString(),
+                Map = curMap ?? "",
+                Zone = ZoneSwitcher.LastClickedZoneIndex,
+                ZoneAttempts = _zoneAttempts,
+                WasFarmingActive = Config.Enabled,
+            });
+        }
+
+        // === Auto-resume sau crash (task 22.5): kich hoat mot lan khi component san sang ===
+        if (_autoResumePending && !Config.Enabled && State == AutoBossState.Idle
+            && Time.time > 10f)
+        {
+            _autoResumePending = false;
+            Plugin.Log.LogWarning("[AutoBoss] AUTO-RESUME: phuc hoi farming tu persisted state");
+            _zoneAttempts = _restoredZoneAttempts;
+            Config.Enabled = true;
+            Transition(AutoBossState.FarmTown);
         }
 
         _stateTimer += Time.deltaTime;

@@ -46,6 +46,9 @@ public class AutoBossConfig
     public bool EnableRandomization = true;    // ±10% dwell, ±20% switch delay, micro-pause
     public int RandomizationIntensity = 1;     // 0=low, 1=medium, 2=high
 
+    // === Crash recovery (task 22) ===
+    public bool EnableAutoRestartResume = false; // tu dong resume farming khi state con fresh (<5 phut)
+
     // === Multi-boss profiles ===
     // Khi nhận thông báo boss, tool tự khớp text với BossNames của từng profile
     // rồi áp dụng route tương ứng.

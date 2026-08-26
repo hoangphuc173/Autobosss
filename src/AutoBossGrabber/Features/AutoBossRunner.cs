@@ -35,6 +35,13 @@ public class AutoBossRunner : MonoBehaviour
     private readonly FarmExtras _farm = new FarmExtras();
     private float _farmTickTimer;
 
+    // === Behavior randomization (task 20) ===
+    private readonly BehaviorRandomizer _rand = new BehaviorRandomizer(
+        enabledProvider: () => Plugin.Instance?.Config?.EnableRandomization ?? false,
+        intensityProvider: () => Plugin.Instance?.Config?.RandomizationIntensity ?? BehaviorRandomizer.IntensityMedium);
+    private float _zoneDwellFactor = 1f;      // ±10% per-zone
+    private float _switchCooldownCurrent = ZoneSwitchCooldown; // ±20% per-switch
+
     // === Debug switches (mac dinh TAT cho production) ===
     // Bat len true neu can UI dump tu dong 8s/20s/40s sau khi attach.
     public bool EnableDebugAutoDump = false;
@@ -1223,6 +1230,9 @@ public class AutoBossRunner : MonoBehaviour
             dwellSec = hasEliteMob ? ZoneBossHintDwellSec : ZoneMobDwellSec;
         }
 
+        // Randomization (task 20): he so ±10% dac thu cho tung khu, on dinh trong khu
+        dwellSec *= _zoneDwellFactor;
+
         // === LOG DETAIL mỗi 2s để debug zone switch ===
         if (Time.time - _lastZoneScanLogAt >= 2f)
         {
@@ -1245,6 +1255,8 @@ public class AutoBossRunner : MonoBehaviour
                 _zoneAttempts++;
                 _captchaTriggered = false;
                 if (Config.EnableAutoZoneSwitch) _farm.OnZoneCleared();
+                _zoneDwellFactor = _rand.RandomizeDwellTime(1f);
+                _switchCooldownCurrent = _rand.RandomizeMovementDelay(ZoneSwitchCooldown);
                 if (_zoneAttempts % 5 == 0 || _zoneAttempts == 1)
                     Plugin.Log.LogInfo($"[AutoBoss] Khu {ZoneSwitcher.LastClickedZoneIndex} confirmed (#{_zoneAttempts})");
 
@@ -1264,7 +1276,7 @@ public class AutoBossRunner : MonoBehaviour
 
         // === Gate: chỉ call NextZone khi vượt cả cooldown VÀ dwell ===
         _zoneSwitchTimer += Time.deltaTime;
-        if (_zoneSwitchTimer < ZoneSwitchCooldown) return;
+        if (_zoneSwitchTimer < _switchCooldownCurrent) return;
         if (zoneAge < dwellSec) return;
         _zoneSwitchTimer = 0f;
 
@@ -1275,7 +1287,7 @@ public class AutoBossRunner : MonoBehaviour
             if (!ZoneSwitcher.LastActionClickedZone)
             {
                 // Panel vừa mở hoặc pending confirm → re-arm timer để poll ngay lần sau
-                _zoneSwitchTimer = ZoneSwitchCooldown;
+                _zoneSwitchTimer = _switchCooldownCurrent;
                 return;
             }
 
@@ -1285,6 +1297,8 @@ public class AutoBossRunner : MonoBehaviour
             _zoneAttempts++;
             _captchaTriggered = false;
             if (Config.EnableAutoZoneSwitch) _farm.OnZoneCleared();
+            _zoneDwellFactor = _rand.RandomizeDwellTime(1f);
+            _switchCooldownCurrent = _rand.RandomizeMovementDelay(ZoneSwitchCooldown);
 
             if (_zoneAttempts % 5 == 0 || _zoneAttempts == 1)
                 Plugin.Log.LogInfo($"[AutoBoss] Khu {ZoneSwitcher.LastClickedZoneIndex} confirmed (#{_zoneAttempts})");

@@ -42,6 +42,10 @@ public class AutoBossConfig
     public bool EnableAutoSatellite = false;   // tu dong dung item satellite (tang exp)
     public List<int> SatelliteItemIds = new List<int>(); // id item satellite trong hanh trang
 
+    // === Behavior randomization (task 20) ===
+    public bool EnableRandomization = true;    // ±10% dwell, ±20% switch delay, micro-pause
+    public int RandomizationIntensity = 1;     // 0=low, 1=medium, 2=high
+
     // === Multi-boss profiles ===
     // Khi nhận thông báo boss, tool tự khớp text với BossNames của từng profile
     // rồi áp dụng route tương ứng.

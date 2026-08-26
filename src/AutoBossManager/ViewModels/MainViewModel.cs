@@ -51,9 +51,58 @@ namespace AutoBossManager.ViewModels
         private string _statusMessage = "Ready";
         private Services.SocketServer? _socketServer;
 
+        // === Global Pause (task 21.4): chan moi bot khoi farm ===
+        private bool _globalPause;
+        public bool GlobalPause
+        {
+            get => _globalPause;
+            set
+            {
+                if (_globalPause == value) return;
+                _globalPause = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(GlobalPauseText));
+
+                if (_socketServer != null)
+                {
+                    var cmd = value ? Commands.PAUSE : Commands.RESUME;
+                    _socketServer.BroadcastCommand(cmd);
+                    AppendLog(value ? "Warning" : "Info",
+                        $"GLOBAL PAUSE {(value ? "ON - tat ca bot tam dung" : "OFF - resume")}", Guid.Empty);
+                }
+                StatusMessage = value
+                    ? "⏸ GLOBAL PAUSE ON - mọi lệnh Start All bị chặn"
+                    : "▶ Global pause OFF";
+            }
+        }
+
+        public string GlobalPauseText => GlobalPause ? "⏸ PAUSED" : "⏸ Global Pause";
+
         // === Observable Collections ===
         public ObservableCollection<BotInstanceViewModel> BotInstances { get; }
         public ObservableCollection<LogEntry> LogEntries { get; }
+
+        // === Selected bot (cho shortcut Space = Start/Stop) ===
+        private BotInstanceViewModel? _selectedBot;
+        public BotInstanceViewModel? SelectedBot
+        {
+            get => _selectedBot;
+            set { _selectedBot = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>Space: toggle Start/Stop cho bot dang chon (task 26.1).</summary>
+        public void ToggleSelectedBot()
+        {
+            if (SelectedBot == null)
+            {
+                StatusMessage = "Chưa chọn bot nào (click vào 1 hàng trước).";
+                return;
+            }
+
+            var isRunning = SelectedBot.Status == ConnectionStatus.Active;
+            var cmd = isRunning ? "STOP_FARMING" : "START_FARMING";
+            BotInstance_CommandRequested(SelectedBot, cmd);
+        }
 
         // === Aggregate Statistics ===
         public int ConnectedClientCount
@@ -111,6 +160,8 @@ namespace AutoBossManager.ViewModels
         public ICommand RefreshCommand { get; }
         public ICommand AddBotCommand { get; }
         public ICommand ClearLogsCommand { get; }
+        public ICommand GlobalPauseCommand { get; }
+        public ICommand ToggleSelectedBotCommand { get; }
 
         // === Events ===
         public event EventHandler<string>? GlobalCommandRequested;
@@ -131,6 +182,8 @@ namespace AutoBossManager.ViewModels
             RefreshCommand = new RelayCommand(_ => RefreshStatistics());
             AddBotCommand = new RelayCommand(_ => ExecuteAddBot());
             ClearLogsCommand = new RelayCommand(_ => LogEntries.Clear());
+            GlobalPauseCommand = new RelayCommand(_ => GlobalPause = !GlobalPause);
+            ToggleSelectedBotCommand = new RelayCommand(_ => ToggleSelectedBot());
 
             // Set up refresh timer (1 second interval)
             _refreshTimer = new DispatcherTimer
@@ -244,6 +297,12 @@ namespace AutoBossManager.ViewModels
 
         private void ExecuteStartAll()
         {
+            if (GlobalPause)
+            {
+                StatusMessage = "⛔ GLOBAL PAUSE đang bật - tắt Global Pause trước khi Start All!";
+                AppendLog("Warning", "Start All bị chặn do Global Pause", Guid.Empty);
+                return;
+            }
             GlobalCommandRequested?.Invoke(this, "START_ALL");
             StatusMessage = "Starting all bot instances...";
         }
@@ -256,6 +315,7 @@ namespace AutoBossManager.ViewModels
 
         private void ExecuteEmergencyStop()
         {
+            if (GlobalPause) GlobalPause = false; // emergency tu dong tat pause de STOP di duoc
             GlobalCommandRequested?.Invoke(this, "EMERGENCY_STOP");
             StatusMessage = "EMERGENCY STOP - All bots halted!";
         }

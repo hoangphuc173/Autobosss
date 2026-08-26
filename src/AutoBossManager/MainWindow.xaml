@@ -11,6 +11,14 @@
         WindowStartupLocation="CenterScreen"
         Background="#1E1E24">
 
+    <Window.InputBindings>
+        <!-- Keyboard shortcuts (task 26.1) -->
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}"/>
+        <KeyBinding Modifiers="Control" Key="N" Command="{Binding AddBotCommand}"/>
+        <KeyBinding Modifiers="Control" Key="P" Command="{Binding GlobalPauseCommand}"/>
+        <KeyBinding Key="Space" Command="{Binding ToggleSelectedBotCommand}"/>
+    </Window.InputBindings>
+
     <Window.Resources>
         <!-- Style for status indicator -->
         <Style x:Key="StatusIndicatorStyle" TargetType="Ellipse">
@@ -173,8 +181,8 @@
         <Border DockPanel.Dock="Bottom" Background="#111116" Padding="15,15" BorderThickness="0,2,0,0" BorderBrush="#2A2A35">
             <Grid>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                    <Button Content="⚙ Add Bot" Command="{Binding AddBotCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
-                    <Button Content="🔄 Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource ActionButtonStyle}" Background="#64748B"/>
+                    <Button Content="⚙ Add Bot (Ctrl+N)" Command="{Binding AddBotCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                    <Button Content="🔄 Refresh (F5)" Command="{Binding RefreshCommand}" Style="{StaticResource ActionButtonStyle}" Background="#64748B"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -183,6 +191,9 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="{Binding GlobalPauseText}" Command="{Binding GlobalPauseCommand}"
+                            Style="{StaticResource ActionButtonStyle}" Background="#7C3AED"
+                            ToolTip="Ctrl+P - chan moi bot khoi farm (task 21.4)"/>
                     <Button Content="🛑 EMERGENCY STOP" Command="{Binding EmergencyStopCommand}" Style="{StaticResource DangerButtonStyle}" MinWidth="180"/>
                 </StackPanel>
             </Grid>
@@ -193,7 +204,7 @@
 
             <TabItem Header="🤖 Bots">
                 <Border Margin="0,8,0,8" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">
-                    <DataGrid ItemsSource="{Binding BotInstances}"
+                    <DataGrid ItemsSource="{Binding BotInstances}" SelectedItem="{Binding SelectedBot}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"

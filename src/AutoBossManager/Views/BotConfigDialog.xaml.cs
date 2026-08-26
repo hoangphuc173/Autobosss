@@ -42,6 +42,22 @@ namespace AutoBossManager.Views
                 : "";
         }
 
+        /// <summary>Ap preset vao cac field tren UI ngay lap tuc (task 19.2/25.3).</summary>
+        private void CmbPreset_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (CmbPreset.SelectedItem is not System.Windows.Controls.ComboBoxItem { Content: string name })
+                return;
+            var preset = Services.StrategyPresetManager.Find(name);
+            if (preset == null) return; // "(giu nguyen)"
+
+            TxtMaxZoneAttempts.Text = preset.MaxZoneAttempts.ToString();
+            TxtAttackRange.Text = preset.AttackRange.ToString("0.##");
+            TxtCombatTimeout.Text = preset.CombatTimeoutSec.ToString("0.#");
+            TxtRetreatHp.Text = preset.RetreatHpPct.ToString("0.#");
+            TxtLootRadius.Text = preset.LootRadius.ToString("0.#");
+            ChkAutoZone.IsChecked = true;
+        }
+
         private void BtnPush_Click(object sender, RoutedEventArgs e)
         {
             try

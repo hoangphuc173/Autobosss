@@ -100,9 +100,16 @@ namespace AutoBossShared
         [JsonProperty("maxRestartAttempts")]
         public int MaxRestartAttempts { get; set; }
         
-        // === Schedule Configuration (Phase 2) ===
-        [JsonProperty("schedule")]
-        public Schedule Schedule { get; set; } = new();
+    // === Schedule Configuration (Phase 2) ===
+    [JsonProperty("schedule")]
+    public Schedule Schedule { get; set; } = new();
+
+    // === Behavior randomization sync (task 19.3/20.3) ===
+    [JsonProperty("enableRandomization")]
+    public bool EnableRandomization { get; set; } = true;
+
+    [JsonProperty("randomizationIntensity")]
+    public int RandomizationIntensity { get; set; } = 1; // 0=low 1=medium 2=high
         
         public BotProfile()
         {

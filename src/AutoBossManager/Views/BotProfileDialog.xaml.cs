@@ -65,6 +65,21 @@ namespace AutoBossManager.Views
             }
         }
 
+        /// <summary>Ap preset vao cac field tren UI (task 19.2).</summary>
+        private void CmbPreset_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (CmbPreset.SelectedItem is not System.Windows.Controls.ComboBoxItem { Content: string name })
+                return;
+            var preset = Services.StrategyPresetManager.Find(name);
+            if (preset == null) return;
+
+            TxtMaxZoneAttempts.Text = preset.MaxZoneAttempts.ToString();
+            TxtAttackRange.Text = preset.AttackRange.ToString("0.##");
+            TxtCombatTimeout.Text = preset.CombatTimeoutSec.ToString("0.#");
+            TxtRetreatHp.Text = preset.RetreatHpPct.ToString("0.#");
+            TxtLootRadius.Text = preset.LootRadius.ToString("0.#");
+        }
+
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -93,6 +108,15 @@ namespace AutoBossManager.Views
                 profile.CombatTimeoutSec = ParseFloat(TxtCombatTimeout.Text, 60f);
                 profile.RetreatHpPct = ParseFloat(TxtRetreatHp.Text, 20f);
                 profile.LootRadius = ParseFloat(TxtLootRadius.Text, 200f);
+
+                // Randomization sync (task 19.3/20.3): theo preset dang chon
+                var selectedPreset = CmbPreset.SelectedItem is System.Windows.Controls.ComboBoxItem { Content: string pn }
+                    ? Services.StrategyPresetManager.Find(pn) : null;
+                if (selectedPreset != null)
+                {
+                    profile.EnableRandomization = selectedPreset.EnableRandomization;
+                    profile.RandomizationIntensity = selectedPreset.RandomizationIntensity;
+                }
 
                 // Validate truoc khi dong dialog - bao loi ngay tai cho.
                 var validation = _profileManager.ValidateProfile(profile);

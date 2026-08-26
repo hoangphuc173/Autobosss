@@ -537,6 +537,10 @@ namespace AutoBossManager.Services
                 {
                     message.Payload["bossNames"] = profile.TargetBossNames;
                 }
+
+                // Behavior randomization sync (task 19.3/20.3)
+                message.Payload["enableRandomization"] = profile.EnableRandomization;
+                message.Payload["randomizationIntensity"] = profile.RandomizationIntensity;
                 
                 // Serialize farm loop settings
                 message.Payload["enableAutoZoneSwitch"] = profile.EnableAutoZoneSwitch;

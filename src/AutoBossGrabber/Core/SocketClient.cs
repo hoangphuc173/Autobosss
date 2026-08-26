@@ -540,10 +540,22 @@ public class SocketClient : MonoBehaviour
                     config.EnableAutoSatellite = Convert.ToBoolean(sat);
                     updatesApplied++;
                 }
+
+                // === Behavior randomization sync (task 19.3/20.3) ===
+                if (message.Payload.TryGetValue("enableRandomization", out object er))
+                {
+                    config.EnableRandomization = Convert.ToBoolean(er);
+                    updatesApplied++;
+                }
+                if (message.Payload.TryGetValue("randomizationIntensity", out object ri))
+                {
+                    config.RandomizationIntensity = Math.Clamp(Convert.ToInt32(ri), 0, 2);
+                    updatesApplied++;
+                }
             }
             catch (Exception ex)
             {
-                Plugin.Log.LogWarning($"[SocketClient] Failed to apply farm loop flags: {ex.Message}");
+                Plugin.Log.LogWarning($"[SocketClient] Failed to apply farm/randomization flags: {ex.Message}");
             }
 
             Plugin.Log.LogInfo($"[SocketClient] Config updated successfully ({updatesApplied} parameters changed)");

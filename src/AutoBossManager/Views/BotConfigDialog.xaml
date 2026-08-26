@@ -25,6 +25,17 @@
     <StackPanel Margin="16">
         <TextBlock x:Name="TxtHeader" FontSize="14" FontWeight="Bold" Foreground="#F59E0B" Margin="0,0,0,10"/>
 
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Strategy preset:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <ComboBox x:Name="CmbPreset" Width="160" Background="#2A2A35" Foreground="White"
+                      SelectionChanged="CmbPreset_SelectionChanged">
+                <ComboBoxItem Content="(giu nguyen)" IsSelected="True"/>
+                <ComboBoxItem Content="Aggressive"/>
+                <ComboBoxItem Content="Balanced"/>
+                <ComboBoxItem Content="Safe"/>
+            </ComboBox>
+        </StackPanel>
+
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>

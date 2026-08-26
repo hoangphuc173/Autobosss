@@ -256,6 +256,17 @@ namespace AutoBossManager.ViewModels
             }
         }
 
+        public void AddOrUpdatePlaceholder(BotInstanceState state)
+        {
+            var existing = BotInstances.FirstOrDefault(b => b.InstanceId == state.InstanceId);
+            if (existing != null) { existing.UpdateFromState(state); return; }
+            var vm = new BotInstanceViewModel();
+            vm.UpdateFromState(state);
+            vm.CommandRequested += BotInstance_CommandRequested;
+            BotInstances.Add(vm);
+            RefreshStatistics();
+        }
+
         /// <summary>
         /// Remove a bot instance from the collection
         /// </summary>

@@ -73,13 +73,23 @@ namespace AutoBossManager
                 });
             };
 
-            // Client connected - add new bot instance
+            // Client connected - add placeholder so UI updates instantly (detailed state arrives via STATUS_UPDATE)
             socketServer.OnClientConnected += (sender, e) =>
             {
                 mainWindow.Dispatcher.Invoke(() =>
                 {
                     mainViewModel.AppendLog("Info", "Bot connected", e.InstanceId);
                     mainViewModel.StatusMessage = $"Client connected: {e.InstanceId}";
+                    // Add placeholder entry immediately; OnStatusUpdate will fill details
+                    var placeholder = new BotInstanceState
+                    {
+                        InstanceId = e.InstanceId,
+                        Status = ConnectionStatus.Connected,
+                        CurrentState = AutoBossState.Idle,
+                        AccountName = $"Bot-{e.InstanceId.ToString("N")[..6]}",
+                        CurrentMap = "(connecting...)",
+                    };
+                    mainViewModel.AddOrUpdatePlaceholder(placeholder);
                 });
             };
 

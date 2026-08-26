@@ -42,6 +42,10 @@ public class AutoBossRunner : MonoBehaviour
     private float _zoneDwellFactor = 1f;      // ±10% per-zone
     private float _switchCooldownCurrent = ZoneSwitchCooldown; // ±20% per-switch
 
+    // === Safety (task 21.3): dem so lan combat timeout lien tiep ===
+    private int _combatFailStreak;
+    private const int CombatFailSafetyLimit = 5;
+
     // === Debug switches (mac dinh TAT cho production) ===
     // Bat len true neu can UI dump tu dong 8s/20s/40s sau khi attach.
     public bool EnableDebugAutoDump = false;
@@ -1537,11 +1541,17 @@ public class AutoBossRunner : MonoBehaviour
 
         if (BossDetector.IsDeadOrMissing(_currentBoss))
         {
-            if (!ConfirmBossDeadOrMissing()) return; // grace hoặc vừa thay object mới
+            if (!ConfirmBossDeadOrMissing()) return; // grace ho���c v���a thay object m��>i
             string name = BossDetector.GetMobNameSafe(_currentBoss);
-            Plugin.Log.LogInfo($"[AutoBoss] Boss '{name}' defeated → Loot");
+            Plugin.Log.LogInfo($"[AutoBoss] Boss '{name}' defeated �+' Loot");
             _currentBoss = null;
-            // KHÔNG tắt _bossAttackEngaged ở đây - để LootDrops tắt
+
+            // Safety (task 21.3): kill thanh cong -> reset chuoi fail
+            _combatFailStreak = 0;
+            // Analytics: bao kill ve Manager (truoc day chua duoc goi tu runner!)
+            try { Plugin.Instance.SocketClient?.SendBossKilled(name, _stateTimer); } catch { }
+
+            // KHA"NG t��_t _bossAttackEngaged ��Y �`A�y - �`��� LootDrops t��_t
             Transition(AutoBossState.LootDrops);
             return;
         }
@@ -1570,15 +1580,29 @@ public class AutoBossRunner : MonoBehaviour
 
         if (_stateTimer > Config.CombatTimeoutSec)
         {
-            Plugin.Log.LogWarning($"[AutoBoss] Combat timeout {_stateTimer:F0}s → skip boss");
+            Plugin.Log.LogWarning($"[AutoBoss] Combat timeout {_stateTimer:F0}s �+' skip boss");
             _currentBoss = null;
-            // Timeout → tắt auto Q
+            // Timeout �+' t��_t auto Q
             if (_bossAttackEngaged)
             {
                 Plugin.Log.LogInfo("[AutoBoss] Combat timeout -> stop auto attack Q");
                 AutoPickupLite.SetAutoAttack(false);
                 _bossAttackEngaged = false;
             }
+
+            // Safety auto-pause (task 21.3): 5 timeout lien tiep -> dung bot,
+            // yeu cau resume thu cong (F1) de tranh lap lai vo ich gay detection.
+            _combatFailStreak++;
+            if (_combatFailStreak >= CombatFailSafetyLimit)
+            {
+                Plugin.Log.LogError("[AutoBoss] SAFETY PAUSE: 5 consecutive combat timeouts -> STOP. Press F1 to resume.");
+                Config.Enabled = false;
+                _combatFailStreak = 0;
+                try { Plugin.Instance.SocketClient?.SendLogEvent("Warning", "SAFETY_PAUSE: 5 consecutive combat timeouts - manual resume required"); } catch { }
+                Transition(AutoBossState.Idle);
+                return;
+            }
+
             Transition(AutoBossState.LootDrops);
             return;
         }
@@ -2239,13 +2263,32 @@ public class AutoBossRunner : MonoBehaviour
 
     private void HandleHotkeys()
     {
+        // === PANIC STOP (task 21.2): Ctrl+Alt+F12 -> dung ngay lap tuc ===
+        bool ctrl = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+        bool alt = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
+        if (ctrl && alt && Input.GetKeyDown(KeyCode.F12))
+        {
+            Config.Enabled = false;
+            _combatFailStreak = 0;
+            if (_bossAttackEngaged)
+            {
+                AutoPickupLite.SetAutoAttack(false);
+                _bossAttackEngaged = false;
+            }
+            State = AutoBossState.Idle;
+            Plugin.Log.LogWarning("[AutoBoss] !!! PANIC STOP (Ctrl+Alt+F12) - bot da dung ngay !!!");
+            try { Plugin.Instance.SocketClient?.SendLogEvent("Warning", "PANIC_STOP via Ctrl+Alt+F12"); } catch { }
+            return;
+        }
+
         if (Input.GetKeyDown(KeyCode.F1))
         {
             Config.Enabled = !Config.Enabled;
             Plugin.Log.LogInfo($"[AutoBoss] {(Config.Enabled ? "ENABLED" : "DISABLED")} (manual F1)");
             if (Config.Enabled && State == AutoBossState.Idle)
             {
-                // Reset cooldown để không bị block bởi detection cooldown
+                // Resume thu cong sau safety pause -> xoa chuoi fail
+                _combatFailStreak = 0;
                 BossNotificationDetector.ResetCooldown();
 
                 // FIX: Detect xem có đang ở đâu để quyết định flow

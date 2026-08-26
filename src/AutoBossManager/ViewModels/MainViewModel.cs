@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using AutoBossManager.Helpers;
@@ -11,12 +12,36 @@ using AutoBossShared;
 namespace AutoBossManager.ViewModels
 {
     /// <summary>
+    /// Mot dong log trong panel Logs.
+    /// </summary>
+    public class LogEntry
+    {
+        public DateTime Timestamp { get; init; } = DateTime.Now;
+        public string Level { get; init; } = "Info";
+        public string Source { get; init; } = "";
+        public string Message { get; init; } = "";
+
+        public string TimeFormatted => Timestamp.ToString("HH:mm:ss");
+        public string Display => $"[{TimeFormatted}] [{Level}] {Source} {Message}".TrimEnd();
+
+        public string LevelColor => Level switch
+        {
+            "Error" => "#EF4444",
+            "Warning" => "#F59E0B",
+            _ => "#94A3B8",
+        };
+    }
+
+    /// <summary>
     /// Main ViewModel for the AutoBoss Manager application.
     /// Manages collection of bot instances and aggregate statistics.
     /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
+        private const int MaxLogEntries = 1000;
+
         private readonly DispatcherTimer _refreshTimer;
+        private readonly Services.ProfileManager _profileManager;
         private int _connectedClientCount;
         private int _totalBossKills;
         private TimeSpan _totalUptime;
@@ -25,6 +50,7 @@ namespace AutoBossManager.ViewModels
 
         // === Observable Collections ===
         public ObservableCollection<BotInstanceViewModel> BotInstances { get; }
+        public ObservableCollection<LogEntry> LogEntries { get; }
 
         // === Aggregate Statistics ===
         public int ConnectedClientCount
@@ -81,14 +107,18 @@ namespace AutoBossManager.ViewModels
         public ICommand EmergencyStopCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand AddBotCommand { get; }
+        public ICommand ClearLogsCommand { get; }
 
         // === Events ===
         public event EventHandler<string>? GlobalCommandRequested;
 
         // === Constructor ===
-        public MainViewModel()
+        public MainViewModel(Services.ProfileManager profileManager)
         {
+            _profileManager = profileManager ?? throw new ArgumentNullException(nameof(profileManager));
+
             BotInstances = new ObservableCollection<BotInstanceViewModel>();
+            LogEntries = new ObservableCollection<LogEntry>();
 
             // Initialize commands
             StartAllCommand = new RelayCommand(_ => ExecuteStartAll());
@@ -96,6 +126,7 @@ namespace AutoBossManager.ViewModels
             EmergencyStopCommand = new RelayCommand(_ => ExecuteEmergencyStop());
             RefreshCommand = new RelayCommand(_ => RefreshStatistics());
             AddBotCommand = new RelayCommand(_ => ExecuteAddBot());
+            ClearLogsCommand = new RelayCommand(_ => LogEntries.Clear());
 
             // Set up refresh timer (1 second interval)
             _refreshTimer = new DispatcherTimer
@@ -227,14 +258,67 @@ namespace AutoBossManager.ViewModels
 
         private void ExecuteAddBot()
         {
-            // TODO: mo Add-Bot dialog (chon profile -> launch game instance).
-            StatusMessage = "Add Bot: chua ho tro trong phien ban nay.";
+            try
+            {
+                var owner = Application.Current?.MainWindow;
+
+                var dialog = new Views.BotProfileDialog(_profileManager)
+                {
+                    Owner = owner,
+                };
+
+                if (dialog.ShowDialog() != true || dialog.Profile == null)
+                {
+                    return;
+                }
+
+                StatusMessage = $"Đã lưu profile '{dialog.Profile.AccountName}'";
+
+                if (dialog.LaunchGame)
+                {
+                    Views.BotProfileDialog.LaunchGameProcess(dialog.Profile);
+                    StatusMessage = $"Đã lưu profile và launch game cho '{dialog.Profile.AccountName}'. Chờ bot kết nối...";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"⚠ Lỗi mở dialog Add Bot: {ex.Message}";
+            }
         }
+
+        /// <summary>
+        /// Them log vao panel (newest-first, gioi han MaxLogEntries dong).
+        /// Phai goi tren UI thread.
+        /// </summary>
+        public void AppendLog(string level, string message, Guid instanceId)
+        {
+            LogEntries.Insert(0, new LogEntry
+            {
+                Level = level,
+                Message = message,
+                Source = ShortId(instanceId),
+            });
+
+            while (LogEntries.Count > MaxLogEntries)
+            {
+                LogEntries.RemoveAt(LogEntries.Count - 1);
+            }
+        }
+
+        private static string ShortId(Guid id) =>
+            id.ToString("N")[..8];
 
         private void BotInstance_CommandRequested(object? sender, string command)
         {
             if (sender is not BotInstanceViewModel botVm)
             {
+                return;
+            }
+
+            // Mo dialog cau hinh va push config xuong bot (task 25 + 7.6).
+            if (command == "OPEN_CONFIG")
+            {
+                OpenConfigDialog(botVm);
                 return;
             }
 
@@ -253,6 +337,44 @@ namespace AutoBossManager.ViewModels
             // Send command to specific bot instance via SocketServer
             _socketServer.SendCommand(botVm.InstanceId, command);
             StatusMessage = $"Command {command} sent to {botVm.AccountName}";
+        }
+
+        private void OpenConfigDialog(BotInstanceViewModel botVm)
+        {
+            var owner = Application.Current?.MainWindow;
+
+            // Prefill tu profile da luu (neu co), fallback = gia tri hien tai cua bot.
+            var profile = _profileManager.ProfileExists(botVm.AccountName)
+                ? _profileManager.LoadProfile(botVm.AccountName) ?? new BotProfile { AccountName = botVm.AccountName }
+                : new BotProfile { AccountName = botVm.AccountName };
+
+            var dialog = new Views.BotConfigDialog(profile, botVm.AccountName) { Owner = owner };
+            if (dialog.ShowDialog() != true || dialog.Result == null)
+            {
+                return;
+            }
+
+            var updated = dialog.Result;
+
+            try
+            {
+                _profileManager.SaveProfile(updated);
+            }
+            catch (ArgumentException ex)
+            {
+                MessageBox.Show(ex.Message, "Lưu profile thất bại", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (_socketServer != null && _socketServer.GetConnectedClients().Contains(botVm.InstanceId))
+            {
+                _socketServer.SendConfigUpdate(botVm.InstanceId, updated);
+                StatusMessage = $"Đã push config mới xuống '{botVm.AccountName}'.";
+            }
+            else
+            {
+                StatusMessage = $"Đã lưu config cho '{botVm.AccountName}' (bot offline - sẽ áp dụng lần kết nối sau).";
+            }
         }
 
         // === INotifyPropertyChanged ===

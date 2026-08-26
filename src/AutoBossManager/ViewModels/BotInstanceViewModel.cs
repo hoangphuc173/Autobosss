@@ -161,6 +161,7 @@ namespace AutoBossManager.ViewModels
         public ICommand StopCommand { get; }
         public ICommand PauseCommand { get; }
         public ICommand ResumeCommand { get; }
+        public ICommand ConfigCommand { get; }
 
         // === Events ===
         public event EventHandler<string>? CommandRequested;
@@ -178,6 +179,7 @@ namespace AutoBossManager.ViewModels
             StopCommand = new RelayCommand(_ => RequestCommand("STOP_FARMING"));
             PauseCommand = new RelayCommand(_ => RequestCommand("PAUSE"));
             ResumeCommand = new RelayCommand(_ => RequestCommand("RESUME"));
+            ConfigCommand = new RelayCommand(_ => RequestCommand("OPEN_CONFIG"));
         }
 
         // === Public Methods ===

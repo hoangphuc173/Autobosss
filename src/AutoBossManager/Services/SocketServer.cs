@@ -531,6 +531,12 @@ namespace AutoBossManager.Services
                 {
                     message.Payload["bossSkillTriggers"] = profile.BossSkillTriggers;
                 }
+
+                // Client HandleConfigUpdate doc key "bossNames" de cap nhat danh sach muc tieu
+                if (profile.TargetBossNames != null && profile.TargetBossNames.Count > 0)
+                {
+                    message.Payload["bossNames"] = profile.TargetBossNames;
+                }
                 
                 // Serialize farm loop settings
                 message.Payload["enableAutoZoneSwitch"] = profile.EnableAutoZoneSwitch;

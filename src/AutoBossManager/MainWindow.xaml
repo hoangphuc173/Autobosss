@@ -187,15 +187,18 @@
             </Grid>
         </Border>
 
-        <!-- Main Content Area -->
-        <Border Margin="15" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">
-            <DataGrid ItemsSource="{Binding BotInstances}"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      SelectionMode="Single"
-                      RowHeight="45"
-                      Margin="5">
+        <!-- Main Content Area: Tabs = Bots / Logs -->
+        <TabControl Background="Transparent" BorderThickness="0" Margin="15,10,15,0">
+
+            <TabItem Header="🤖 Bots">
+                <Border Margin="0,8,0,8" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">
+                    <DataGrid ItemsSource="{Binding BotInstances}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              SelectionMode="Single"
+                              RowHeight="45"
+                              Margin="5">
 
                 <DataGrid.Columns>
                     <!-- Status Indicator -->
@@ -293,20 +296,65 @@
                     <DataGridTextColumn Header="LAST BOSS" Binding="{Binding LastBossKilled}" Width="150" Foreground="#C084FC"/>
 
                     <!-- Action Buttons -->
-                    <DataGridTemplateColumn Header="ACTIONS" Width="*" MinWidth="320">
+                    <DataGridTemplateColumn Header="ACTIONS" Width="*" MinWidth="390">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button Content="▶ Start" Command="{Binding StartCommand}" Style="{StaticResource SuccessButtonStyle}" MinWidth="70" Padding="8,4"/>
-                                    <Button Content="⏸ Stop" Command="{Binding StopCommand}" Style="{StaticResource DangerButtonStyle}" MinWidth="70" Padding="8,4"/>
-                                    <Button Content="⏯ Pause" Command="{Binding PauseCommand}" Style="{StaticResource WarningButtonStyle}" MinWidth="70" Padding="8,4"/>
-                                    <Button Content="▶ Resume" Command="{Binding ResumeCommand}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="70" Padding="8,4"/>
+                                    <Button Content="▶ Start" Command="{Binding StartCommand}" Style="{StaticResource SuccessButtonStyle}" MinWidth="66" Padding="8,4"/>
+                                    <Button Content="⏸ Stop" Command="{Binding StopCommand}" Style="{StaticResource DangerButtonStyle}" MinWidth="66" Padding="8,4"/>
+                                    <Button Content="⏯ Pause" Command="{Binding PauseCommand}" Style="{StaticResource WarningButtonStyle}" MinWidth="66" Padding="8,4"/>
+                                    <Button Content="▶ Resume" Command="{Binding ResumeCommand}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="66" Padding="8,4"/>
+                                    <Button Content="⚙ Config" Command="{Binding ConfigCommand}" Style="{StaticResource ActionButtonStyle}" Background="#8B5CF6" MinWidth="70" Padding="8,4"/>
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
-        </Border>
+                </Border>
+            </TabItem>
+
+            <!-- ============ LOGS TAB ============ -->
+            <TabItem Header="📜 Logs">
+                <Border Margin="0,8,0,8" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">
+                    <DockPanel>
+                        <!-- Toolbar: filter + clear + count -->
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,8,10,4">
+                            <TextBlock Text="Level:" Foreground="#A0AEC0" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <ComboBox x:Name="CmbLogFilter" Width="100"
+                                      Background="#2A2A35" Foreground="White"
+                                      SelectionChanged="CmbLogFilter_SelectionChanged">
+                                <ComboBoxItem Content="All" IsSelected="True"/>
+                                <ComboBoxItem Content="Info"/>
+                                <ComboBoxItem Content="Warning"/>
+                                <ComboBoxItem Content="Error"/>
+                            </ComboBox>
+
+                            <Button x:Name="BtnClearLogs" Content="🗑 Clear" Click="BtnClearLogs_Click"
+                                    Margin="12,0,0,0" Padding="10,4" Background="#4A5568" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand"/>
+
+                            <TextBlock Text="{Binding LogEntries.Count, StringFormat='{}{0} entries'}"
+                                       Foreground="#60A5FA" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                        </StackPanel>
+
+                        <!-- Log list (newest first) -->
+                        <ListBox x:Name="LstLogs" ItemsSource="{Binding LogEntries}"
+                                 Background="#1F1F27" BorderThickness="0"
+                                 FontFamily="Consolas" FontSize="12"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                 Margin="10,4,10,10">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Display}" TextWrapping="NoWrap">
+                                        <TextBlock.Resources/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+            </TabItem>
+        </TabControl>
     </DockPanel>
 </Window>

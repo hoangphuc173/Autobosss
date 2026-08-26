@@ -68,6 +68,7 @@ namespace AutoBossManager
             {
                 mainWindow.Dispatcher.Invoke(() =>
                 {
+                    mainViewModel.AppendLog("Info", "Bot connected", e.InstanceId);
                     mainViewModel.StatusMessage = $"Client connected: {e.InstanceId}";
                 });
             };
@@ -77,6 +78,7 @@ namespace AutoBossManager
             {
                 mainWindow.Dispatcher.Invoke(() =>
                 {
+                    mainViewModel.AppendLog("Warning", "Bot disconnected", instanceId);
                     mainViewModel.RemoveBotInstance(instanceId);
                     mainViewModel.StatusMessage = $"Client disconnected: {instanceId}";
                 });
@@ -87,6 +89,7 @@ namespace AutoBossManager
             {
                 mainWindow.Dispatcher.Invoke(() =>
                 {
+                    mainViewModel.AppendLog("Info", $"BOSS FOUND: {e.BossName} at {e.MapName} {e.ZoneName}", e.InstanceId);
                     mainViewModel.StatusMessage = $"Boss found: {e.BossName} at {e.MapName} {e.ZoneName}";
                 });
             };
@@ -95,13 +98,18 @@ namespace AutoBossManager
             socketServer.OnBossKilled += (sender, e) =>
             {
                 analytics.RecordBossKill(e.InstanceId, e.BossName);
+                mainWindow.Dispatcher.Invoke(() =>
+                {
+                    mainViewModel.AppendLog("Info", $"BOSS KILLED: {e.BossName} ({e.KillDurationSec:F1}s)", e.InstanceId);
+                });
             };
 
-            // Log events - surface in status bar (Console.WriteLine is invisible in a WPF app)
+            // Log events - surface in Logs tab + status bar
             socketServer.OnLogEvent += (sender, e) =>
             {
                 mainWindow.Dispatcher.Invoke(() =>
                 {
+                    mainViewModel.AppendLog(e.Level, e.Message, e.InstanceId);
                     mainViewModel.StatusMessage = $"[{e.Level}] {e.Message}";
                 });
             };
@@ -112,6 +120,7 @@ namespace AutoBossManager
                 analytics.RecordError(e.InstanceId, e.Message);
                 mainWindow.Dispatcher.Invoke(() =>
                 {
+                    mainViewModel.AppendLog("Error", e.Message, e.InstanceId);
                     mainViewModel.StatusMessage = $"ERROR [{e.InstanceId}]: {e.Message}";
                 });
             };
@@ -143,10 +152,13 @@ namespace AutoBossManager
             {
                 socketServer.Start();
                 mainViewModel.StatusMessage = "Socket server started on port 28081";
+                mainViewModel.AppendLog("Info", "IPC server listening tai 127.0.0.1:28081", Guid.Empty);
+                mainViewModel.AppendLog("Info", "Manager kho dong - cho bot ket noi...", Guid.Empty);
             }
             catch (Exception ex)
             {
                 mainViewModel.StatusMessage = $"Failed to start socket server: {ex.Message}";
+                mainViewModel.AppendLog("Error", $"Khong mo duoc port 28081: {ex.Message}", Guid.Empty);
                 MessageBox.Show($"Failed to start socket server: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

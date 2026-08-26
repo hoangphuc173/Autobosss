@@ -1,15 +1,14 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AutoBossGrabber", "AutoBossGrabber", "{DB21C9EE-07DF-4D7D-A84D-62FE82AB0EA8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBossGrabber", "src\AutoBossGrabber\AutoBossGrabber.csproj", "{DB1AAD9F-BD43-4849-8056-542115DF6209}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBossGrabber", "AutoBossGrabber\source\AutoBossGrabber.csproj", "{DB1AAD9F-BD43-4849-8056-542115DF6209}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBossManager", "src\AutoBossManager\AutoBossManager.csproj", "{43E1DD8F-1DD0-4B00-8A9A-AAA4D57A364A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBossManager", "AutoBossManager\AutoBossManager.csproj", "{43E1DD8F-1DD0-4B00-8A9A-AAA4D57A364A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBossShared", "src\AutoBossShared\AutoBossShared.csproj", "{73A53176-7548-4A4A-B7D1-DCC18D7793BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBossShared", "AutoBossShared\AutoBossShared.csproj", "{73A53176-7548-4A4A-B7D1-DCC18D7793BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoBossLauncher", "src\AutoBossLauncher\AutoBossLauncher.csproj", "{A1B2C3D4-E5F6-4A7B-8C9D-0E1F2A3B4C5D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,8 +31,9 @@ Global
 		{73A53176-7548-4A4A-B7D1-DCC18D7793BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73A53176-7548-4A4A-B7D1-DCC18D7793BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73A53176-7548-4A4A-B7D1-DCC18D7793BE}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{DB1AAD9F-BD43-4849-8056-542115DF6209} = {DB21C9EE-07DF-4D7D-A84D-62FE82AB0EA8}
+		{A1B2C3D4-E5F6-4A7B-8C9D-0E1F2A3B4C5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-4A7B-8C9D-0E1F2A3B4C5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-4A7B-8C9D-0E1F2A3B4C5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-4A7B-8C9D-0E1F2A3B4C5D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

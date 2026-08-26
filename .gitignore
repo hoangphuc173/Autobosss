@@ -7,20 +7,8 @@
 # Game runtime copy (multi-GB install, never track)
 runtime/
 
-# Game runtime at legacy location (pre-restructure)
-AutoBossGrabber/BepInEx/
-AutoBossGrabber/dotnet/
-AutoBossGrabber/PyCaptcha/
-AutoBossGrabber/Vu Tr? Đại Chiến_Data/
-AutoBossGrabber/Vũ Trụ Đại Chiến_Data/
-AutoBossGrabber/*.dll
-AutoBossGrabber/test.exe
-AutoBossGrabber/*.log
-AutoBossGrabber/output/
-
-# Python captcha payload
-PyCaptcha/dist/
-PyCaptcha/build/
+# Legacy binaries kept for reference only
+tools/legacy/*.exe
 
 # IDE / tool local settings
 .vs/

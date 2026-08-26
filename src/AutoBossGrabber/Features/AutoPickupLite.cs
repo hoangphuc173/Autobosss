@@ -563,7 +563,7 @@ public static class AutoPickupLite
 
 
 
-    /// <summary>Tìm item gần player nhất, gọi pickup() hoặc di chuyển tới. Rate-limit 0.2s.</summary>
+    /// <summary>Tìm item gần player nhất ĐẠT FILTER (ItemFilterManager), gọi pickup() hoặc di chuyển tới. Rate-limit 0.2s.</summary>
     public static bool PickupNearest(float maxRadius)
     {
         try
@@ -582,11 +582,13 @@ public static class AutoPickupLite
                 if (item == null) continue;
                 var pos = GameAPI.GetItemPosition(item);
                 float d = Vector2.Distance(myPos, pos);
-                if (d < nearestDist)
-                {
-                    nearest = item;
-                    nearestDist = d;
-                }
+                if (d >= nearestDist) continue;
+
+                // ItemFilter (task 14): bo qua vat pham khong dat dieu kien loc.
+                if (!ItemFilterManager.Instance.ShouldPickup(item)) continue;
+
+                nearest = item;
+                nearestDist = d;
             }
 
             if (nearest == null) return false;

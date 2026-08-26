@@ -957,6 +957,68 @@ public static class GameAPI
         return Vector2.zero;
     }
 
+    // ===== Item rarity doc cho ItemFilter (task 14) =====
+
+    private static readonly Dictionary<string, MemberInfo> _itemRarityMemberCache =
+        new Dictionary<string, MemberInfo>();
+
+    private static readonly string[] ItemRarityCandidates =
+        { "rarity", "quality", "grade", "star", "stars", "pinzhi" };
+
+    /// <summary>
+    /// Doc rarity cua vat pham (heuristic co cache). Null neu khong biet -
+    /// ItemFilterManager se coi nhu khong ap dung rarity filter.
+    /// </summary>
+    public static int? TryReadItemRarity(object item)
+    {
+        if (item == null) return null;
+        try
+        {
+            var t = item.GetType();
+            var typeName = t.FullName ?? t.Name;
+
+            if (!_itemRarityMemberCache.TryGetValue(typeName, out var member))
+            {
+                member = FindReadableMember<int>(t, ItemRarityCandidates);
+                _itemRarityMemberCache[typeName] = member;
+            }
+
+            if (member == null) return null;
+
+            object v = member is PropertyInfo pi ? pi.GetValue(item)
+                     : member is FieldInfo fi ? fi.GetValue(item)
+                     : ((MethodInfo)member).Invoke(item, null);
+            if (v is int i) return i;
+            if (v is short s) return s;
+            if (v is byte b) return b;
+            if (v is long l && l >= int.MinValue && l <= int.MaxValue) return (int)l;
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Tim property/field/getter tra ve kieu T voi ten trong candidates (instance).</summary>
+    private static MemberInfo FindReadableMember<T>(Type t, string[] candidates)
+    {
+        const BindingFlags F = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        foreach (var name in candidates)
+        {
+            var p = t.GetProperty(name, F);
+            if (p != null && p.PropertyType == typeof(T) && p.CanRead) return p;
+
+            var f = t.GetField(name, F);
+            if (f != null && f.FieldType == typeof(T)) return f;
+
+            // IL2CPP: getter thuong sinh thanh method get_xxx khong tham so
+            var m = t.GetMethod("get_" + name, F, null, Type.EmptyTypes, null);
+            if (m != null && m.ReturnType == typeof(T)) return m;
+        }
+        return null;
+    }
+
     // ===== Panel helpers =====
     public static object FindCapsulePanel()
     {
@@ -2736,7 +2798,7 @@ public static class GameAPI
         }
     }
 
-    private static string GetItemDisplayName(object item)
+    public static string GetItemDisplayName(object item)
     {
         if (item == null) return "";
         try

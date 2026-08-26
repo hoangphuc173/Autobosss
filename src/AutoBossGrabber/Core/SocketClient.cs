@@ -540,13 +540,63 @@ public class SocketClient : MonoBehaviour
                     Plugin.Log.LogWarning($"[SocketClient] Failed to parse bossNames: {ex.Message}");
                 }
             }
-            
+
+            // === Item filter hot-reload (task 14) - Manager gui tu ProfileManager ===
+            ApplyItemFilterConfig(message, ref updatesApplied);
+
             Plugin.Log.LogInfo($"[SocketClient] Config updated successfully ({updatesApplied} parameters changed)");
         }
         catch (Exception ex)
         {
             Plugin.Log.LogError($"[SocketClient] Config update failed: {ex.Message}");
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Ap dung cau hinh bo loc vat pham tu CONFIG_UPDATE payload:
+    /// itemFilterMode (string), itemFilterList (list), alwaysPickGems,
+    /// alwaysPickQuestItems, minRarityToPickup (int).
+    /// </summary>
+    private static void ApplyItemFilterConfig(IpcMessage message, ref int updatesApplied)
+    {
+        try
+        {
+            bool hasAny =
+                message.Payload.ContainsKey("itemFilterMode") ||
+                message.Payload.ContainsKey("itemFilterList") ||
+                message.Payload.ContainsKey("alwaysPickGems") ||
+                message.Payload.ContainsKey("alwaysPickQuestItems") ||
+                message.Payload.ContainsKey("minRarityToPickup");
+
+            if (!hasAny) return;
+
+            var mode = ItemFilterMode.Disabled;
+            if (message.Payload.TryGetValue("itemFilterMode", out object modeObj))
+            {
+                Enum.TryParse(modeObj?.ToString(), true, out mode);
+            }
+
+            System.Collections.Generic.List<string> itemList = null;
+            if (message.Payload.TryGetValue("itemFilterList", out object listObj))
+            {
+                string json = JsonConvert.SerializeObject(listObj);
+                itemList = JsonConvert.DeserializeObject<System.Collections.Generic.List<string>>(json);
+            }
+
+            bool gems = message.Payload.TryGetValue("alwaysPickGems", out object g)
+                ? Convert.ToBoolean(g) : true;
+            bool quest = message.Payload.TryGetValue("alwaysPickQuestItems", out object q)
+                ? Convert.ToBoolean(q) : true;
+            int minRarity = message.Payload.TryGetValue("minRarityToPickup", out object r)
+                ? Convert.ToInt32(r) : 0;
+
+            ItemFilterManager.Instance.Configure(mode, itemList, gems, quest, minRarity);
+            updatesApplied++;
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.LogWarning($"[SocketClient] Failed to apply itemFilter config: {ex.Message}");
         }
     }
     

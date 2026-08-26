@@ -5,7 +5,7 @@ namespace AutoBoss.Tests;
 
 /// <summary>
 /// Khoi tao moi truong test: Plugin.Log phai khac null vi cac class plugin
-/// (GraphCache, BFSPathfinder...) goi Plugin.Log truc tiep.
+/// (GraphCache, BFSPathfinder, ItemFilterManager...) goi Plugin.Log truc tiep.
 /// ManualLogSource co the tao doc lap, khong can BepInEx runtime.
 /// </summary>
 public static class TestBootstrap
@@ -18,6 +18,13 @@ public static class TestBootstrap
         AutoBossGrabber.Plugin.Log ??= new ManualLogSource("AutoBossTests");
         _initialized = true;
     }
+}
+
+/// <summary>Chay truoc moi test trong assembly - dam bao Plugin.Log san sang.</summary>
+internal static class ModuleInit
+{
+    [System.Runtime.CompilerServices.ModuleInitializer]
+    internal static void Init() => TestBootstrap.Initialize();
 }
 
 [CollectionDefinition("PluginEnv", DisableParallelization = true)]

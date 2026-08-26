@@ -403,6 +403,39 @@
                     </DockPanel>
                 </Border>
             </TabItem>
+            <!-- ============ PROFILES TAB ============ -->
+            <TabItem Header="📁 Profiles">
+                <Border Margin="0,8,0,8" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,8,10,4">
+                            <TextBlock Text="{Binding SavedProfiles.Count, StringFormat='{}{0} profiles'}" Foreground="#60A5FA" VerticalAlignment="Center"/>
+                            <Button Content="🔄 Refresh" Click="BtnProfilesRefresh_Click" Margin="12,0,0,0" Padding="10,4" Background="#64748B" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                        </StackPanel>
+                        <DataGrid ItemsSource="{Binding SavedProfiles}" AutoGenerateColumns="False"
+                                  CanUserAddRows="False" IsReadOnly="True" Margin="10,4,10,10"
+                                  Background="#1F1F27" RowBackground="#1F1F27" Foreground="#E2E8F0"
+                                  HeadersVisibility="Column" GridLinesVisibility="None">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="ACCOUNT" Binding="{Binding AccountName}" Width="140" FontWeight="Bold" Foreground="White"/>
+                                <DataGridTextColumn Header="BOSS TARGETS" Binding="{Binding TargetBossDisplay}" Width="220"/>
+                                <DataGridTextColumn Header="HOME MAP" Binding="{Binding HomeMapName}" Width="120"/>
+                                <DataGridTextColumn Header="GAME EXE" Binding="{Binding GameExecutableDisplay}" Width="*"/>
+                                <DataGridTemplateColumn Header="ACTIONS" Width="260">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                                <Button Content="🚀 Launch" Padding="6,2" Margin="2" Background="#0EA5E9" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnProfileLaunch_Click"/>
+                                                <Button Content="✏ Edit" Padding="6,2" Margin="2" Background="#F59E0B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnProfileEdit_Click"/>
+                                                <Button Content="🗑 Delete" Padding="6,2" Margin="2" Background="#EF4444" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnProfileDelete_Click"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </TabItem>
             <!-- ============ CAPTCHA QUEUE TAB (task 23.3) ============ -->
             <TabItem Header="&#x1F9E9; Captcha">
                 <Border Margin="0,8,0,8" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">

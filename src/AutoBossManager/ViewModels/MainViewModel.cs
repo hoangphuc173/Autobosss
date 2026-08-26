@@ -94,6 +94,7 @@ namespace AutoBossManager.ViewModels
         public ObservableCollection<BotInstanceViewModel> BotInstances { get; }
         public ObservableCollection<LogEntry> LogEntries { get; }
         public ObservableCollection<CaptchaEntry> CaptchaQueue { get; }
+        public ObservableCollection<BotProfile> SavedProfiles { get; }
 
         // === Selected bot (cho shortcut Space = Start/Stop) ===
         private BotInstanceViewModel? _selectedBot;
@@ -189,6 +190,8 @@ namespace AutoBossManager.ViewModels
             BotInstances = new ObservableCollection<BotInstanceViewModel>();
             LogEntries = new ObservableCollection<LogEntry>();
             CaptchaQueue = new ObservableCollection<CaptchaEntry>();
+            SavedProfiles = new ObservableCollection<BotProfile>();
+            RefreshProfiles();
 
             // Initialize commands
             StartAllCommand = new RelayCommand(_ => ExecuteStartAll());
@@ -384,6 +387,42 @@ namespace AutoBossManager.ViewModels
             StatusMessage = "EMERGENCY STOP - All bots halted!";
         }
 
+        public void RefreshProfiles()
+        {
+            SavedProfiles.Clear();
+            foreach (var p in _profileManager.LoadAllProfiles())
+                SavedProfiles.Add(p);
+            OnPropertyChanged(nameof(SavedProfiles));
+        }
+
+        public void DeleteProfile(BotProfile profile)
+        {
+            if (profile == null) return;
+            if (MessageBox.Show($"Xóa profile '{profile.AccountName}'?", "Xác nhận",
+                    MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
+            _profileManager.DeleteProfile(profile.AccountName);
+            SavedProfiles.Remove(profile);
+            StatusMessage = $"Đã xóa profile '{profile.AccountName}'";
+        }
+
+        public void EditProfile(BotProfile profile)
+        {
+            if (profile == null) return;
+            var owner = Application.Current?.MainWindow;
+            var dialog = new Views.BotProfileDialog(_profileManager, profile.AccountName) { Owner = owner };
+            if (dialog.ShowDialog() != true) return;
+            RefreshProfiles();
+            StatusMessage = $"Đã cập nhật profile '{profile.AccountName}'";
+        }
+
+        public void LaunchProfile(BotProfile profile)
+        {
+            if (_launcher == null) { StatusMessage = "Launcher chưa sẵn sàng."; return; }
+            var r = _launcher.Launch(profile);
+            StatusMessage = r.Success ? $"🚀 Launched {profile.AccountName} (PID {r.Message})" : $"⚠ {r.Message}";
+            AppendLog(r.Success ? "Info" : "Error", r.Message, Guid.Empty);
+        }
+
         private void ExecuteAddBot()
         {
             try
@@ -400,7 +439,8 @@ namespace AutoBossManager.ViewModels
                     return;
                 }
 
-                StatusMessage = $"Đã lưu profile '{dialog.Profile.AccountName}'";
+                RefreshProfiles();
+                StatusMessage = $"Đã lưu profile '{dialog.Profile.AccountName}' — xem tab Profiles để launch";
 
                 if (dialog.LaunchGame)
                 {

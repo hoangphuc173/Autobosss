@@ -60,6 +60,7 @@ public class SocketClient : MonoBehaviour
     private int commandsExecuted = 0;
     private int errorsCount = 0;
     private DateTime sessionStartTime = DateTime.UtcNow;
+    private string accountName = "Unknown";
     
     // === Unity Lifecycle ===
     
@@ -68,6 +69,15 @@ public class SocketClient : MonoBehaviour
         try
         {
             Plugin.Log.LogInfo("[SocketClient] Initializing...");
+            
+            // Read account name from command line arguments
+            string[] args = System.Environment.GetCommandLineArgs();
+            int idx = Array.IndexOf(args, "--account");
+            if (idx >= 0 && idx + 1 < args.Length)
+            {
+                accountName = args[idx + 1];
+            }
+            Plugin.Log.LogInfo($"[SocketClient] AccountName set to: {accountName}");
             
             cts = new CancellationTokenSource();
             
@@ -666,7 +676,8 @@ public class SocketClient : MonoBehaviour
             message.Payload["playerMpPct"] = 100.0f; // MP not tracked yet - default to 100%
             message.Payload["bossKillsThisSession"] = 0; // TODO: Track this in runner
             message.Payload["currentTarget"] = runner.Config.BossNames.Count > 0 ? runner.Config.BossNames[0] : "None";
-            message.Payload["uptime"] = (DateTime.UtcNow - sessionStartTime).TotalSeconds;
+            message.Payload["sessionStartTime"] = sessionStartTime;
+            message.Payload["accountName"] = accountName;
             
             WriteMessage(message);
         }

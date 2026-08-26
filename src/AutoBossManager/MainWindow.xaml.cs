@@ -125,6 +125,20 @@ namespace AutoBossManager
             _viewModel.Analytics.Refresh();
         }
 
+        private void BtnProfilesRefresh_Click(object sender, RoutedEventArgs e) => _viewModel.RefreshProfiles();
+        private void BtnProfileLaunch_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: AutoBossShared.BotProfile p }) _viewModel.LaunchProfile(p);
+        }
+        private void BtnProfileEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: AutoBossShared.BotProfile p }) _viewModel.EditProfile(p);
+        }
+        private void BtnProfileDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: AutoBossShared.BotProfile p }) _viewModel.DeleteProfile(p);
+        }
+
         // ============ Notifications (task 18) ============
 
         private System.Windows.Forms.NotifyIcon? _trayIcon;

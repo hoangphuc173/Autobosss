@@ -39,14 +39,20 @@ if (-not (Test-Path $dllPath)) {
 
 # --- 2. Tim game neu khong truyen -GamePath ---
 if ($GamePath -eq "") {
-    Write-Host "`n[*] Searching for games with BepInEx..." -ForegroundColor Yellow
+    # Uu tien thu muc runtime trong repo (truong hop test local khong qua Steam)
+    $localRuntime = Join-Path $repoRoot "runtime"
+    if (Test-Path (Join-Path $localRuntime "BepInEx\plugins")) {
+        $GamePath = $localRuntime
+        Write-Host "`n[*] Auto-detected local runtime: $GamePath" -ForegroundColor Green
+    } else {
+        Write-Host "`n[*] Searching for games with BepInEx..." -ForegroundColor Yellow
 
-    $searchPaths = @(
-        "C:\Program Files (x86)\Steam\steamapps\common",
-        "D:\Steam\steamapps\common",
-        "D:\SteamLibrary\steamapps\common",
-        "E:\Steam\steamapps\common"
-    )
+        $searchPaths = @(
+            "C:\Program Files (x86)\Steam\steamapps\common",
+            "D:\Steam\steamapps\common",
+            "D:\SteamLibrary\steamapps\common",
+            "E:\Steam\steamapps\common"
+        )
 
     $foundGames = @()
     foreach ($search in $searchPaths) {
@@ -60,18 +66,20 @@ if ($GamePath -eq "") {
         }
     }
 
-    if ($foundGames.Count -eq 0) {
-        Write-Host "`n[x] No games found. Please specify -GamePath" -ForegroundColor Red
-        exit 1
-    }
+        if ($foundGames.Count -eq 0) {
+            Write-Host "`n[x] No games found. Please specify -GamePath" -ForegroundColor Red
+            Write-Host "    Example: .\deploy.ps1 -GamePath `"$localRuntime`"" -ForegroundColor Yellow
+            exit 1
+        }
 
-    Write-Host "`nFound $($foundGames.Count) game(s):" -ForegroundColor Green
-    for ($i = 0; $i -lt $foundGames.Count; $i++) {
-        Write-Host "  [$($i+1)] $($foundGames[$i].Name)" -ForegroundColor Cyan
-    }
+        Write-Host "`nFound $($foundGames.Count) game(s):" -ForegroundColor Green
+        for ($i = 0; $i -lt $foundGames.Count; $i++) {
+            Write-Host "  [$($i+1)] $($foundGames[$i].Name)" -ForegroundColor Cyan
+        }
 
-    $choice = Read-Host "`nSelect game number (1-$($foundGames.Count))"
-    $GamePath = $foundGames[[int]$choice - 1].Path
+        $choice = Read-Host "`nSelect game number (1-$($foundGames.Count))"
+        $GamePath = $foundGames[[int]$choice - 1].Path
+    }
 }
 
 $targetPath = Join-Path $GamePath "BepInEx\plugins"

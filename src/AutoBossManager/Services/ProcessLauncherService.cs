@@ -91,6 +91,7 @@ namespace AutoBossManager.Services
                     var psi = new ProcessStartInfo
                     {
                         FileName = profile.GameExecutablePath,
+                        Arguments = $"--account \"{account}\"",
                         WorkingDirectory = Path.GetDirectoryName(profile.GameExecutablePath)!,
                         UseShellExecute = true,
                     };

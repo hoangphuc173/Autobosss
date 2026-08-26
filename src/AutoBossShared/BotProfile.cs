@@ -104,12 +104,15 @@ namespace AutoBossShared
     [JsonProperty("schedule")]
     public Schedule Schedule { get; set; } = new();
 
-    // === Behavior randomization sync (task 19.3/20.3) ===
-    [JsonProperty("enableRandomization")]
-    public bool EnableRandomization { get; set; } = true;
+        // === Behavior randomization sync (task 19.3/20.3) ===
+        [JsonProperty("enableRandomization")]
+        public bool EnableRandomization { get; set; } = true;
 
-    [JsonProperty("randomizationIntensity")]
-    public int RandomizationIntensity { get; set; } = 1; // 0=low 1=medium 2=high
+        [JsonProperty("randomizationIntensity")]
+        public int RandomizationIntensity { get; set; } = 1; // 0=low 1=medium 2=high
+
+        [JsonIgnore] public string TargetBossDisplay => TargetBossNames.Count > 0 ? string.Join(", ", TargetBossNames) : "-";
+        [JsonIgnore] public string GameExecutableDisplay => string.IsNullOrEmpty(GameExecutablePath) ? "-" : System.IO.Path.GetFileName(GameExecutablePath);
         
         public BotProfile()
         {

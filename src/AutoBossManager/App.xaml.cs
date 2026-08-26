@@ -38,10 +38,11 @@ namespace AutoBossManager
             {
                 var mainViewModel = provider.GetRequiredService<MainViewModel>();
                 var socketServer = provider.GetRequiredService<SocketServer>();
+                var analytics = provider.GetRequiredService<AnalyticsEngine>();
                 var mainWindow = new MainWindow(mainViewModel);
 
-                // Wire up SocketServer events to MainViewModel
-                WireUpSocketServerEvents(socketServer, mainViewModel, mainWindow);
+                // Wire up SocketServer events to MainViewModel + AnalyticsEngine
+                WireUpSocketServerEvents(socketServer, mainViewModel, analytics, mainWindow);
 
                 return mainWindow;
             });
@@ -51,7 +52,7 @@ namespace AutoBossManager
         /// Wire up SocketServer events to MainViewModel for real-time updates.
         /// Task 7.6: Integration with MainViewModel
         /// </summary>
-        private void WireUpSocketServerEvents(SocketServer socketServer, MainViewModel mainViewModel, MainWindow mainWindow)
+        private void WireUpSocketServerEvents(SocketServer socketServer, MainViewModel mainViewModel, AnalyticsEngine analytics, MainWindow mainWindow)
         {
             // Status updates - update bot instance state
             socketServer.OnStatusUpdate += (sender, e) =>
@@ -90,6 +91,12 @@ namespace AutoBossManager
                 });
             };
 
+            // Boss killed - record into analytics
+            socketServer.OnBossKilled += (sender, e) =>
+            {
+                analytics.RecordBossKill(e.InstanceId, e.BossName);
+            };
+
             // Log events - surface in status bar (Console.WriteLine is invisible in a WPF app)
             socketServer.OnLogEvent += (sender, e) =>
             {
@@ -99,9 +106,10 @@ namespace AutoBossManager
                 });
             };
 
-            // Error events
+            // Error events - record into analytics for error-rate tracking
             socketServer.OnError += (sender, e) =>
             {
+                analytics.RecordError(e.InstanceId, e.Message);
                 mainWindow.Dispatcher.Invoke(() =>
                 {
                     mainViewModel.StatusMessage = $"ERROR [{e.InstanceId}]: {e.Message}";

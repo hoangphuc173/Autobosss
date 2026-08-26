@@ -44,6 +44,11 @@ namespace AutoBossManager.Services
         public event EventHandler<BossFoundEventArgs>? OnBossFound;
 
         /// <summary>
+        /// Raised when a client reports a boss killed.
+        /// </summary>
+        public event EventHandler<BossKilledEventArgs>? OnBossKilled;
+
+        /// <summary>
         /// Raised when a client sends a log event.
         /// </summary>
         public event EventHandler<LogEventArgs>? OnLogEvent;
@@ -300,7 +305,7 @@ namespace AutoBossManager.Services
                         string killedBoss = message.Payload.TryGetValue("bossName", out var kb) ? kb?.ToString() ?? "" : "";
                         float killDuration = message.Payload.TryGetValue("killDurationSec", out var kd)
                             ? Convert.ToSingle(kd) : 0f;
-                        // Could add OnBossKilled event if needed
+                        OnBossKilled?.Invoke(this, new BossKilledEventArgs(instanceId, killedBoss, killDuration));
                         OnLogEvent?.Invoke(this, new LogEventArgs(instanceId,
                             $"Boss killed: {killedBoss} in {killDuration:F1}s"));
                         break;
@@ -749,6 +754,20 @@ namespace AutoBossManager.Services
             BossName = bossName;
             MapName = mapName;
             ZoneName = zoneName;
+        }
+    }
+
+    public class BossKilledEventArgs : EventArgs
+    {
+        public Guid InstanceId { get; }
+        public string BossName { get; }
+        public float KillDurationSec { get; }
+
+        public BossKilledEventArgs(Guid instanceId, string bossName, float killDurationSec)
+        {
+            InstanceId = instanceId;
+            BossName = bossName;
+            KillDurationSec = killDurationSec;
         }
     }
 

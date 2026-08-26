@@ -118,6 +118,20 @@ public static class ZoneSwitcher
         return _cachedMobCount;
     }
 
+    /// <summary>
+    /// Đặt mục tiêu khu cụ thể (lệnh SWITCH_ZONE từ Manager).
+    /// Lần NextZone() kế tiếp sẽ mở panel và click đúng "Khu N" này
+    /// thay vì tiếp tục quét tuần tự.
+    /// </summary>
+    public static void SetTargetZone(int zone)
+    {
+        _targetZone = Math.Max(1, zone);
+        _pendingZoneIdx = -1;          // hủy pending cũ nếu có
+        _panelJustOpened = false;
+        _panelOpenRetries = 0;
+        Plugin.Log.LogInfo($"[ZoneSwitcher] Target zone set → Khu {_targetZone} (remote command)");
+    }
+
     /// <summary>Gọi khi vào map mới để reset về Khu 0.</summary>
     public static void ResetState()
     {

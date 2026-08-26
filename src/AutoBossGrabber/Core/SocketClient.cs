@@ -100,6 +100,10 @@ public class SocketClient : MonoBehaviour
             cts?.Cancel();
             Disconnect();
             
+            // Cho heartbeat task thoat roi moi dispose CTS (tranh ObjectDisposedException).
+            try { heartbeatTask?.Wait(500); } catch { }
+            try { cts?.Dispose(); } catch { }
+            
             Plugin.Log.LogInfo($"[SocketClient] Shutdown complete. Stats: Commands={commandsExecuted}, Errors={errorsCount}");
         }
         catch (Exception ex)
@@ -109,6 +113,8 @@ public class SocketClient : MonoBehaviour
     }
     
     // === Main Thread Command Processing (Subtask 4.4) ===
+    
+    private float _nextStatusUpdateTime = 0f;
     
     void Update()
     {
@@ -128,6 +134,14 @@ public class SocketClient : MonoBehaviour
                 Plugin.Log.LogError($"[SocketClient] Command execution failed: {ex.Message}\n{ex.StackTrace}");
                 SendError($"Command execution failed: {ex.Message}");
             }
+        }
+
+        // STATUS_UPDATE dinh ky moi 5s de Manager cap nhat dashboard realtime
+        // (truoc day chi gui 1 lan luc connect -> UI lac hoi).
+        if (isConnected && Time.time >= _nextStatusUpdateTime)
+        {
+            _nextStatusUpdateTime = Time.time + 5f;
+            SendStatusUpdate();
         }
         
         // Check if reconnection is needed
@@ -390,15 +404,30 @@ public class SocketClient : MonoBehaviour
                 if (message.Payload.TryGetValue("zone", out object zoneObj))
                 {
                     int zone = Convert.ToInt32(zoneObj);
-                    Plugin.Log.LogInfo($"[SocketClient] Switching to zone: {zone}");
-                    
-                    // TODO: Implement zone switching logic
-                    // For now, just log the command
-                    Plugin.Log.LogWarning("[SocketClient] SWITCH_ZONE not yet implemented");
+                    Plugin.Log.LogInfo($"[SocketClient] SWITCH_ZONE -> zone {zone}");
+
+                    // Dung ZoneSwitcher cua plugin: dat muc tieu khu, lan quet ke tiep
+                    // cua runner (ZoneScanLoop) se mo panel va click dung Khu N do.
+                    var runner2 = Plugin.Instance.Runner;
+                    if (runner2 == null)
+                    {
+                        SendError("SWITCH_ZONE failed: AutoBossRunner not initialized");
+                        break;
+                    }
+
+                    if (!runner2.Config.Enabled)
+                    {
+                        SendError("SWITCH_ZONE ignored: farming is not enabled");
+                        break;
+                    }
+
+                    ZoneSwitcher.SetTargetZone(zone);
+                    SendAck($"Switching to zone {zone}");
                 }
                 else
                 {
                     Plugin.Log.LogWarning("[SocketClient] SWITCH_ZONE missing 'zone' parameter");
+                    SendError("Missing required parameter: zone");
                 }
                 break;
                 
@@ -538,7 +567,7 @@ public class SocketClient : MonoBehaviour
     
     // === Message Sending (Subtask 4.7) ===
     
-    private void SendMessage(IpcMessage message)
+    private void WriteMessage(IpcMessage message)
     {
         if (!isConnected || writer == null)
         {
@@ -575,7 +604,7 @@ public class SocketClient : MonoBehaviour
             message.Payload["currentTarget"] = runner.Config.BossNames.Count > 0 ? runner.Config.BossNames[0] : "None";
             message.Payload["uptime"] = (DateTime.UtcNow - sessionStartTime).TotalSeconds;
             
-            SendMessage(message);
+            WriteMessage(message);
         }
         catch (Exception ex)
         {
@@ -593,7 +622,7 @@ public class SocketClient : MonoBehaviour
             message.Payload["zoneName"] = zoneName;
             message.Payload["detectionMethod"] = "ServerNotification";
             
-            SendMessage(message);
+            WriteMessage(message);
             Plugin.Log.LogInfo($"[SocketClient] Sent BOSS_FOUND: {bossName} at {mapName} {zoneName}");
         }
         catch (Exception ex)
@@ -611,7 +640,7 @@ public class SocketClient : MonoBehaviour
             message.Payload["killDurationSec"] = killDurationSec;
             message.Payload["timestamp"] = DateTime.UtcNow.ToString("o");
             
-            SendMessage(message);
+            WriteMessage(message);
             Plugin.Log.LogInfo($"[SocketClient] Sent BOSS_KILLED: {bossName} (duration: {killDurationSec:F1}s)");
         }
         catch (Exception ex)
@@ -628,7 +657,7 @@ public class SocketClient : MonoBehaviour
             message.Payload["level"] = level;
             message.Payload["message"] = logMessage;
             
-            SendMessage(message);
+            WriteMessage(message);
         }
         catch
         {
@@ -644,7 +673,7 @@ public class SocketClient : MonoBehaviour
             message.Payload["message"] = errorMessage;
             message.Payload["timestamp"] = DateTime.UtcNow.ToString("o");
             
-            SendMessage(message);
+            WriteMessage(message);
         }
         catch (Exception ex)
         {
@@ -659,7 +688,7 @@ public class SocketClient : MonoBehaviour
             var message = new IpcMessage(MessageTypes.ACK);
             message.Payload["acknowledgedType"] = acknowledgedType;
             
-            SendMessage(message);
+            WriteMessage(message);
         }
         catch (Exception ex)
         {
@@ -684,7 +713,12 @@ public class SocketClient : MonoBehaviour
                     if (isConnected && !isShuttingDown)
                     {
                         var message = new IpcMessage(MessageTypes.HEARTBEAT);
-                        SendMessage(message);
+                        // Stats nhe: chi doc counter trong process, khong goi GameAPI
+                        // tu background thread (Unity API khong thread-safe).
+                        message.Payload["commandsExecuted"] = commandsExecuted;
+                        message.Payload["errors"] = errorsCount;
+                        message.Payload["uptimeSec"] = (DateTime.UtcNow - sessionStartTime).TotalSeconds;
+                        WriteMessage(message);
                     }
                 }
                 catch (TaskCanceledException)

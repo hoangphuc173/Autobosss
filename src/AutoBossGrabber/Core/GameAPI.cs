@@ -43,6 +43,8 @@ public static class GameAPI
     private static MethodInfo _miGi = null;
     private static MethodInfo _miGetMyPlayer = null;
     private static MethodInfo _miPlayerMoveTo = null;
+    private static MethodInfo _miPlayerMoveDir = null;     // Player.move(Vector2) - resolve 1 lan
+    private static MethodInfo _miPlayerMoveToVec = null;   // moveTo(Vector2, Action, Action) - resolve 1 lan
     private static MethodInfo _miGetX = null;
     private static MethodInfo _miGetY = null;
     private static MethodInfo _miGetHp = null;
@@ -53,7 +55,6 @@ public static class GameAPI
     private static MethodInfo _miGetInfo = null;
 
     // ===== State cache =====
-    private static object _cachedPlayer = null;
     private static bool _warmedUp = false;
     private static bool _warmingUp = false;
 
@@ -265,9 +266,7 @@ public static class GameAPI
             if (_miGi == null || _miGetMyPlayer == null) return null;
             var gm = _miGi.Invoke(null, null);
             if (gm == null) return null;
-            var p = _miGetMyPlayer.Invoke(gm, null);
-            _cachedPlayer = p;
-            return p;
+            return _miGetMyPlayer.Invoke(gm, null);
         }
         catch (Exception ex)
         {
@@ -458,20 +457,29 @@ public static class GameAPI
             // Ưu tiên 2: Player.move(Vector2 direction) - từ Tool_Om_Boss TryIssueMoveTo
             try
             {
-                var miMove = p.GetType().GetMethod("move", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (miMove != null)
+                // Cache MethodInfo de tranh GetType().GetMethod() moi frame (hot path).
+                if (_miPlayerMoveDir == null)
                 {
-                    var ps = miMove.GetParameters();
-                    if (ps.Length == 1 && ps[0].ParameterType.Name == "Vector2")
+                    _miPlayerMoveDir = p.GetType().GetMethod("move", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (_miPlayerMoveDir != null)
                     {
-                        float dx = x - px, dy = y - py;
-                        float mag = Mathf.Sqrt(dx * dx + dy * dy);
-                        if (mag > 0.001f)
+                        var ps0 = _miPlayerMoveDir.GetParameters();
+                        if (ps0.Length != 1 || ps0[0].ParameterType.Name != "Vector2")
                         {
-                            var v = new Vector2(dx / mag, dy / mag);
-                            miMove.Invoke(p, new object[] { v });
-                            ok = true;
+                            _miPlayerMoveDir = null; // sai signature, khong dung
                         }
+                    }
+                }
+
+                if (_miPlayerMoveDir != null)
+                {
+                    float dx = x - px, dy = y - py;
+                    float mag = Mathf.Sqrt(dx * dx + dy * dy);
+                    if (mag > 0.001f)
+                    {
+                        var v = new Vector2(dx / mag, dy / mag);
+                        _miPlayerMoveDir.Invoke(p, new object[] { v });
+                        ok = true;
                     }
                 }
             }
@@ -520,12 +528,20 @@ public static class GameAPI
                 catch { }
             }
 
-            // moveTo(Vector2, Action, Action) - thường là client cache + callback
+            // moveTo(Vector2, Action, Action) - thuong la client cache + callback.
+            // Cache MethodInfo de tranh lookup reflection moi frame (hot path).
             try
             {
-                var mVec = _tMainPlayer?.GetMethod("moveTo", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                    null, new Type[] { typeof(Vector2), typeof(Action), typeof(Action) }, null);
-                if (mVec != null) { mVec.Invoke(p, new object[] { new Vector2(x, y), null, null }); flag = true; }
+                if (_miPlayerMoveToVec == null)
+                {
+                    _miPlayerMoveToVec = _tMainPlayer?.GetMethod("moveTo", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                        null, new Type[] { typeof(Vector2), typeof(Action), typeof(Action) }, null);
+                }
+                if (_miPlayerMoveToVec != null)
+                {
+                    _miPlayerMoveToVec.Invoke(p, new object[] { new Vector2(x, y), null, null });
+                    flag = true;
+                }
             }
             catch { }
 

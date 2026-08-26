@@ -31,6 +31,12 @@ public class AutoBossRunner : MonoBehaviour
     public AutoBossConfig Config;
     public AutoBossState State = AutoBossState.Idle;
 
+    // === Debug switches (mac dinh TAT cho production) ===
+    // Bat len true neu can UI dump tu dong 8s/20s/40s sau khi attach.
+    public bool EnableDebugAutoDump = false;
+    // Detector polling cu (false positive cao). Chi bat khi message hook khong hoat dong.
+    public bool EnableLegacyPollingDetector = false;
+
     private float _stateTimer = 0f;
     private float _scanTimer = 0f;
     private float _noItemTimer = 0f;
@@ -272,28 +278,35 @@ public class AutoBossRunner : MonoBehaviour
             _firstUpdateLogged = true;
             Plugin.Log.LogInfo($"[AutoBoss] Update() FIRST TICK (frame={Time.frameCount}, enabled={Config?.Enabled})");
 
-            // Trigger dump ngay 1 lần để verify pipeline hoạt động
-            RunAutoDump("ui_panel_dump_0.txt", "runtime_types_0.txt");
+            if (EnableDebugAutoDump)
+            {
+                // Trigger dump dung 1 lan khi bat debug mode.
+                RunAutoDump("ui_panel_dump_0.txt", "runtime_types_0.txt");
+            }
         }
 
-        // --- Auto-dump timer: 8s / 20s / 40s sau khi attach ---
-        if (_dumpStart < 0f) _dumpStart = Time.time;
-        float dt = Time.time - _dumpStart;
+        // --- Auto-dump timer (CHI chay khi EnableDebugAutoDump = true) ---
+        // Mac dinh TAT de tranh ghi file dump 4 lan/ moi phien production.
+        if (EnableDebugAutoDump)
+        {
+            if (_dumpStart < 0f) _dumpStart = Time.time;
+            float dt = Time.time - _dumpStart;
 
-        if (!_d1 && dt >= 8f)
-        {
-            _d1 = true;
-            RunAutoDump("ui_panel_dump_1.txt", "runtime_types_1.txt");
-        }
-        if (!_d2 && dt >= 20f)
-        {
-            _d2 = true;
-            RunAutoDump("ui_panel_dump_2.txt", "runtime_types_2.txt");
-        }
-        if (!_d3 && dt >= 40f)
-        {
-            _d3 = true;
-            RunAutoDump("ui_panel_dump_3.txt", "runtime_types_3.txt");
+            if (!_d1 && dt >= 8f)
+            {
+                _d1 = true;
+                RunAutoDump("ui_panel_dump_1.txt", "runtime_types_1.txt");
+            }
+            if (!_d2 && dt >= 20f)
+            {
+                _d2 = true;
+                RunAutoDump("ui_panel_dump_2.txt", "runtime_types_2.txt");
+            }
+            if (!_d3 && dt >= 40f)
+            {
+                _d3 = true;
+                RunAutoDump("ui_panel_dump_3.txt", "runtime_types_3.txt");
+            }
         }
 
         // --- Hotkeys (luôn chạy dù Config.Enabled hay không) ---
@@ -307,9 +320,10 @@ public class AutoBossRunner : MonoBehaviour
         if (!MessageHook.IsInstalled)
             BossNotificationHook.CheckActiveTexts();
 
-        // --- AUTO-DETECT BOSS NOTIFICATION (cũ - dùng polling 1s) ---
-        // Tắt fallback cũ vì dễ false positive; chỉ dùng BossNotificationHook đã lọc chặt hơn ở trên
-        if (false && Config != null && Config.AutoDetectBossNotification && !Config.Enabled && State == AutoBossState.Idle)
+        // --- AUTO-DETECT BOSS NOTIFICATION (polling legacy) ---
+        // Mac dinh TAT (EnableLegacyPollingDetector = false) vi false positive cao;
+        // kenh detect chinh la MessageHook + BossNotificationHook.CheckActiveTexts o tren.
+        if (EnableLegacyPollingDetector && Config != null && Config.AutoDetectBossNotification && !Config.Enabled && State == AutoBossState.Idle)
         {
             if (BossNotificationDetector.DetectBossNotification())
             {
@@ -462,7 +476,10 @@ public class AutoBossRunner : MonoBehaviour
         }
 
         // Watchdog: nếu kẹt quá lâu → ưu tiên quay về saved farm, fallback FarmTown.
-        if (_stateTimer > watchdogLimit && State != AutoBossState.Idle && State != AutoBossState.CombatBoss)
+        if (_stateTimer > watchdogLimit && State != AutoBossState.Idle && State != AutoBossState.CombatBoss
+            // Dang cho xac nhan teleport qua scene -> de cac state tu xu ly, tranh watchdog
+            // chuyen trang thai giua chung khi goi teleport dang treo (race edge-case).
+            && !_teleportInProgress)
         {
             // Không route ReturnToFarmMap/RestoreFarmZone/ReverseWalkToFarm về chính nó (tránh loop) — đã có timeout riêng.
             bool canReturnToFarm = _hasSavedFarmContext

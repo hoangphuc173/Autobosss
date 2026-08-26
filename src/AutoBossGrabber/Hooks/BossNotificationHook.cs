@@ -18,7 +18,6 @@ public static class BossNotificationHook
     private static readonly float DetectCooldown = 10f;
 
     private static readonly HashSet<string> _hookedTexts = new HashSet<string>();
-    private static bool _hookInstalled = false;
 
     // Từ khóa hệ thống - phải có 1 trong này
     private static readonly string[] SystemKeywords =
@@ -64,41 +63,6 @@ public static class BossNotificationHook
         }
 
         _log?.LogInfo($"[BossNotificationHook] Extracted {_bossNameKeywords.Count} boss keywords: {string.Join(", ", _bossNameKeywords)}");
-    }
-
-    /// <summary>
-    /// Cài hook một lần, sau đó tự động detect mọi UI text change.
-    /// </summary>
-    public static void InstallHooks()
-    {
-        if (_hookInstalled) return;
-        _hookInstalled = true;
-
-        try
-        {
-            // Hook vào UnityEngine.UI.Text.set_text
-            HookUIText();
-            // Hook vào TMPro.TextMeshProUGUI.set_text
-            HookTMProText();
-
-            _log?.LogInfo("[BossNotificationHook] Hooks installed successfully");
-        }
-        catch (Exception ex)
-        {
-            _log?.LogError($"[BossNotificationHook] Failed to install hooks: {ex.Message}");
-        }
-    }
-
-    private static void HookUIText()
-    {
-        // IL2CPP không hỗ trợ Harmony patch trực tiếp
-        // Thay vào đó, ta sẽ dùng Component.Awake hook
-        // hoặc polling nhẹ hơn (chỉ check active texts, không scan toàn bộ scene)
-    }
-
-    private static void HookTMProText()
-    {
-        // Tương tự như trên
     }
 
     /// <summary>

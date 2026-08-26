@@ -1,0 +1,312 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create PortalEdge class": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565104
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409580298
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409704328
+      }
+    ],
+    "1.2 Create MapGraph class": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565280
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409581038
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409705160
+      }
+    ],
+    "2.1 Add MapGraph serialization methods": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565376
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409711364
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409712113
+      }
+    ],
+    "2.2 Create CacheData model class": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565525
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409712987
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787410114478
+      }
+    ],
+    "2.3 Create GraphCache class": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565602
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787410181389
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787410949654
+      }
+    ],
+    "3. Checkpoint - Verify core data structures work": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565675
+      },
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787410956907
+      }
+    ],
+    "4.1 Create MapNameResolver class": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565739
+      }
+    ],
+    "4.2 Add MapNameResolver serialization methods": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565802
+      }
+    ],
+    "5.1 Create BFSPathfinder class skeleton": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565891
+      }
+    ],
+    "5.2 Implement BFS core algorithm": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409565988
+      }
+    ],
+    "6.1 Add GameAPI.FindAllMapGateways() placeholder": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566128
+      }
+    ],
+    "6.2 Implement BuildGraph() method in BFSPathfinder": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566295
+      }
+    ],
+    "6.3 Implement EnsureGraphLoaded() helper method": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566402
+      }
+    ],
+    "7. Checkpoint - Verify BFS algorithm correctness": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566500
+      }
+    ],
+    "8.1 Implement ComputePath(targetMapName) public method": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566612
+      }
+    ],
+    "8.2 Implement InvalidateCache() public method": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566714
+      }
+    ],
+    "9.1 Create NavigationController class": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566816
+      }
+    ],
+    "9.2 Implement ExecutePath(path) coroutine": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409566986
+      }
+    ],
+    "9.3 Implement TraversePortal(portal) helper coroutine": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567088
+      }
+    ],
+    "9.4 Implement AbortNavigation() method": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567182
+      }
+    ],
+    "10.1 Add BFSPathfinder instance to SocketClient": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567259
+      }
+    ],
+    "10.2 Replace TELEPORT_TO_MAP placeholder in HandleCommand()": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567359
+      }
+    ],
+    "10.3 Implement INVALIDATE_CACHE command handler": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567460
+      }
+    ],
+    "11. Checkpoint - Verify end-to-end integration": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567560
+      }
+    ],
+    "12.1 Add comprehensive error handling to BFSPathfinder": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567660
+      }
+    ],
+    "12.2 Add detailed logging throughout navigation": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567745
+      }
+    ],
+    "13.1 Implement object pooling for BFS data structures": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567835
+      }
+    ],
+    "13.2 Add performance metrics tracking": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409567927
+      }
+    ],
+    "14.1 Implement pathfinding statistics tracking": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409568034
+      }
+    ],
+    "14.2 Add debug visualization support": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409568146
+      }
+    ],
+    "15.1 Update SocketClient documentation": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409568245
+      }
+    ],
+    "15.2 Create usage examples and test scenarios": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409568372
+      }
+    ],
+    "15.3 Run full test suite and verify all requirements": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409568521
+      }
+    ],
+    "16. Final checkpoint - Production readiness check": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409568617
+      }
+    ],
+    "1. Create core data structures and models": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787409705269
+      }
+    ],
+    "2. Implement graph serialization and caching": [
+      {
+        "executionId": "58cd6519-64d1-4e2a-b198-a777b199d3b8",
+        "chatSessionId": "sess_42078db8-7362-407b-a37a-ade4608ed074",
+        "timestamp": 1787410949849
+      }
+    ]
+  }
+}

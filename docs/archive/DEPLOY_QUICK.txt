@@ -1,0 +1,22 @@
+# DEPLOYMENT GUIDE - AutoBossGrabber Phase 3
+
+## DLLs TO DEPLOY:
+- AutoBossGrabber.dll (332 KB)
+- AutoBossShared.dll (19.5 KB)
+
+Source: C:\Users\phuct\Downloads\tool\AutoBossGrabber\AutoBossGrabber\source\bin\Debug\net6.0\
+Target: [GAME_PATH]\BepInEx\plugins\
+
+## QUICK DEPLOY:
+1. Find game folder (Steam ? Right-click game ? Browse Local Files)
+2. Navigate to BepInEx\plugins\
+3. Copy both DLLs to plugins folder
+4. Delete old bfs_map_cache.json if exists
+5. Launch game
+
+## VERIFY:
+- Check BepInEx console for "BFS Pathfinder initialized"
+- Check LogOutput.log for plugin load messages
+- Test Manager connection on port 5000
+
+Full guide in DEPLOYMENT_GUIDE.md

@@ -1,0 +1,312 @@
+<Window x:Class="AutoBossManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AutoBossManager"
+        mc:Ignorable="d"
+        Title="AutoBoss Manager - Multi-Instance Bot Controller"
+        Height="800" Width="1400"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E24">
+
+    <Window.Resources>
+        <!-- Style for status indicator -->
+        <Style x:Key="StatusIndicatorStyle" TargetType="Ellipse">
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="White" Opacity="0.5"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Base Style for Action Buttons -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Specific Button Styles based on colors -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="#3B82F6"/>
+        </Style>
+        <Style x:Key="SuccessButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="#10B981"/>
+        </Style>
+        <Style x:Key="WarningButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="#F59E0B"/>
+        </Style>
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="#EF4444"/>
+        </Style>
+
+        <!-- Style for DataGrid -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#2A2A35"/>
+            <Setter Property="Foreground" Value="#E2E8F0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="RowBackground" Value="#2A2A35"/>
+            <Setter Property="AlternatingRowBackground" Value="#32323E"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+        </Style>
+
+        <!-- Style for DataGrid Column Header -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#1F1F27"/>
+            <Setter Property="Foreground" Value="#A0AEC0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="BorderBrush" Value="#3F3F4E"/>
+        </Style>
+
+        <!-- Style for DataGrid Row -->
+        <Style TargetType="DataGridRow">
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="BorderBrush" Value="#3F3F4E"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#4C51BF"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3F3F4E"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Style for DataGrid Cell -->
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Padding="{TemplateBinding Padding}" Background="Transparent">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- Top Header Bar -->
+        <Border DockPanel.Dock="Top" Background="#111116" Padding="20,15" BorderThickness="0,0,0,2" BorderBrush="#3B82F6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="AutoBoss Manager" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,20,0"/>
+                </StackPanel>
+
+                <!-- Statistics Panel -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Border Background="#2A2A35" CornerRadius="4" Padding="10,5" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Bots: " FontSize="14" Foreground="#A0AEC0"/>
+                            <TextBlock Text="{Binding ConnectedClientCount}" FontSize="14" FontWeight="Bold" Foreground="#3B82F6"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#2A2A35" CornerRadius="4" Padding="10,5" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Total Kills: " FontSize="14" Foreground="#A0AEC0"/>
+                            <TextBlock Text="{Binding TotalBossKills}" FontSize="14" FontWeight="Bold" Foreground="#10B981"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#2A2A35" CornerRadius="4" Padding="10,5" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Efficiency: " FontSize="14" Foreground="#A0AEC0"/>
+                            <TextBlock Text="{Binding AverageBossKillsPerHourFormatted}" FontSize="14" FontWeight="Bold" Foreground="#F59E0B"/>
+                            <TextBlock Text=" boss/hr" FontSize="14" Foreground="#F59E0B"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#2A2A35" CornerRadius="4" Padding="10,5">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Uptime: " FontSize="14" Foreground="#A0AEC0"/>
+                            <TextBlock Text="{Binding TotalUptimeFormatted}" FontSize="14" FontWeight="Bold" Foreground="#EF4444"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Status Message -->
+                <TextBlock Grid.Column="2" Text="{Binding StatusMessage}" VerticalAlignment="Center"
+                          FontSize="13" Foreground="#A0AEC0" FontStyle="Italic"/>
+            </Grid>
+        </Border>
+
+        <!-- Bottom Control Bar -->
+        <Border DockPanel.Dock="Bottom" Background="#111116" Padding="15,15" BorderThickness="0,2,0,0" BorderBrush="#2A2A35">
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button Content="⚙ Add Bot" Command="{Binding AddBotCommand}" Style="{StaticResource PrimaryButtonStyle}"/>
+                    <Button Content="🔄 Refresh" Command="{Binding RefreshCommand}" Style="{StaticResource ActionButtonStyle}" Background="#64748B"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="▶ Start All" Command="{Binding StartAllCommand}" Style="{StaticResource SuccessButtonStyle}"/>
+                    <Button Content="⏸ Stop All" Command="{Binding StopAllCommand}" Style="{StaticResource WarningButtonStyle}"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="🛑 EMERGENCY STOP" Command="{Binding EmergencyStopCommand}" Style="{StaticResource DangerButtonStyle}" MinWidth="180"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Border Margin="15" Background="#2A2A35" CornerRadius="8" BorderThickness="1" BorderBrush="#3F3F4E">
+            <DataGrid ItemsSource="{Binding BotInstances}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      SelectionMode="Single"
+                      RowHeight="45"
+                      Margin="5">
+
+                <DataGrid.Columns>
+                    <!-- Status Indicator -->
+                    <DataGridTemplateColumn Header=" " Width="50">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Ellipse Fill="{Binding StatusColor}"
+                                        Style="{StaticResource StatusIndicatorStyle}"
+                                        ToolTip="{Binding StatusText}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Account Name -->
+                    <DataGridTextColumn Header="ACCOUNT" Binding="{Binding AccountName}"
+                                       Width="140" FontWeight="Bold" Foreground="White"/>
+
+                    <!-- Status -->
+                    <DataGridTextColumn Header="STATUS" Binding="{Binding StatusText}" Width="110"/>
+
+                    <!-- Current State -->
+                    <DataGridTextColumn Header="STATE" Binding="{Binding CurrentState}" Width="140" Foreground="#60A5FA"/>
+
+                    <!-- Current Map -->
+                    <DataGridTextColumn Header="MAP" Binding="{Binding CurrentMap}" Width="150"/>
+
+                    <!-- Current Zone -->
+                    <DataGridTextColumn Header="ZONE" Binding="{Binding CurrentZone}" Width="60">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <!-- HP Percentage with color -->
+                    <DataGridTemplateColumn Header="HP %" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="#1F1F27" CornerRadius="4" Padding="4,2" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding PlayerHpPct, StringFormat='{}{0:F1}%'}"
+                                              Foreground="{Binding HpColor}"
+                                              FontWeight="Bold"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- MP Percentage -->
+                    <DataGridTemplateColumn Header="MP %" Width="80">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Background="#1F1F27" CornerRadius="4" Padding="4,2" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding PlayerMpPct, StringFormat='{}{0:F1}%'}"
+                                              Foreground="#60A5FA"
+                                              FontWeight="Bold"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <!-- Boss Kills -->
+                    <DataGridTextColumn Header="KILLS" Binding="{Binding BossKillsThisSession}" Width="70">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Foreground" Value="#10B981"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <!-- Efficiency -->
+                    <DataGridTextColumn Header="BOSS/HR" Binding="{Binding BossKillsPerHourFormatted}" Width="80">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                <Setter Property="Foreground" Value="#F59E0B"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <!-- Uptime -->
+                    <DataGridTextColumn Header="UPTIME" Binding="{Binding UptimeFormatted}" Width="100">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                <Setter Property="FontFamily" Value="Consolas"/>
+                                <Setter Property="Foreground" Value="#94A3B8"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <!-- Last Boss -->
+                    <DataGridTextColumn Header="LAST BOSS" Binding="{Binding LastBossKilled}" Width="150" Foreground="#C084FC"/>
+
+                    <!-- Action Buttons -->
+                    <DataGridTemplateColumn Header="ACTIONS" Width="*" MinWidth="320">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="▶ Start" Command="{Binding StartCommand}" Style="{StaticResource SuccessButtonStyle}" MinWidth="70" Padding="8,4"/>
+                                    <Button Content="⏸ Stop" Command="{Binding StopCommand}" Style="{StaticResource DangerButtonStyle}" MinWidth="70" Padding="8,4"/>
+                                    <Button Content="⏯ Pause" Command="{Binding PauseCommand}" Style="{StaticResource WarningButtonStyle}" MinWidth="70" Padding="8,4"/>
+                                    <Button Content="▶ Resume" Command="{Binding ResumeCommand}" Style="{StaticResource PrimaryButtonStyle}" MinWidth="70" Padding="8,4"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+    </DockPanel>
+</Window>

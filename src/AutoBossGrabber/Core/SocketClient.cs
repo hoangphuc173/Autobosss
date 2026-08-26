@@ -663,23 +663,34 @@ public class SocketClient : MonoBehaviour
     
     public void SendStatusUpdate()
     {
-        var runner = Plugin.Instance.Runner;
-        if (runner == null) return;
-        
         try
         {
+            var runner = Plugin.Instance.Runner;
+            string stateStr = runner != null ? runner.State.ToString() : AutoBossState.Idle.ToString();
+            string mapName = "Unknown";
+            try { mapName = GameAPI.GetCurrentMapName() ?? "Unknown"; } catch { }
+            int zone = 0;
+            try { zone = GameAPI.GetCurrentZoneIndexFromHUD(); } catch { }
+            float hp = 100f;
+            try { hp = GameAPI.GetPlayerHpPct(); } catch { }
+
             var message = new IpcMessage(MessageTypes.STATUS_UPDATE);
-            message.Payload["state"] = runner.State.ToString();
-            message.Payload["map"] = GameAPI.GetCurrentMapName() ?? "Unknown";
-            message.Payload["zone"] = GameAPI.GetCurrentZoneIndexFromHUD();
-            message.Payload["playerHpPct"] = GameAPI.GetPlayerHpPct();
-            message.Payload["playerMpPct"] = 100.0f; // MP not tracked yet - default to 100%
-            message.Payload["bossKillsThisSession"] = 0; // TODO: Track this in runner
-            message.Payload["currentTarget"] = runner.Config.BossNames.Count > 0 ? runner.Config.BossNames[0] : "None";
+            message.Payload["state"] = stateStr;
+            message.Payload["map"] = mapName;
+            message.Payload["zone"] = zone;
+            message.Payload["playerHpPct"] = hp;
+            message.Payload["playerMpPct"] = 100.0f;
+            message.Payload["bossKillsThisSession"] = 0;
+            try
+            {
+                message.Payload["currentTarget"] = (runner != null && runner.Config.BossNames.Count > 0) ? runner.Config.BossNames[0] : "None";
+            }
+            catch { message.Payload["currentTarget"] = "None"; }
             message.Payload["sessionStartTime"] = sessionStartTime;
             message.Payload["accountName"] = accountName;
             
             WriteMessage(message);
+            Plugin.Log.LogInfo($"[SocketClient] Sent STATUS_UPDATE map='{mapName}' zone={zone} state={stateStr}");
         }
         catch (Exception ex)
         {

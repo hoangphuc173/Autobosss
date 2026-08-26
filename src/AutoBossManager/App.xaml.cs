@@ -81,6 +81,7 @@ namespace AutoBossManager
                     mainViewModel.AppendLog("Info", "Bot connected", e.InstanceId);
                     mainViewModel.StatusMessage = $"Client connected: {e.InstanceId}";
                     // Add placeholder entry immediately; OnStatusUpdate will fill details
+                    var now = DateTime.Now;
                     var placeholder = new BotInstanceState
                     {
                         InstanceId = e.InstanceId,
@@ -88,6 +89,8 @@ namespace AutoBossManager
                         CurrentState = AutoBossState.Idle,
                         AccountName = $"Bot-{e.InstanceId.ToString("N")[..6]}",
                         CurrentMap = "(connecting...)",
+                        SessionStartTime = now,
+                        LastHeartbeat = now,
                     };
                     mainViewModel.AddOrUpdatePlaceholder(placeholder);
                 });

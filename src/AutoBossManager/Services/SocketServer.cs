@@ -312,6 +312,7 @@ namespace AutoBossManager.Services
 
                     case MessageTypes.STATUS_UPDATE:
                         var state = ParseStatusUpdate(message, instanceId);
+                        Console.WriteLine($"[SocketServer] STATUS_UPDATE from {instanceId}: map='{state.CurrentMap}' zone={state.CurrentZone} state={state.CurrentState}");
                         OnStatusUpdate?.Invoke(this, new StatusUpdateEventArgs(state));
                         break;
 

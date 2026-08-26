@@ -295,6 +295,15 @@ namespace AutoBossManager.ViewModels
             }
         }
 
+        // === Notifications (task 18) ===
+        private Services.NotificationManager? _notifier;
+        public Services.NotificationManager? Notifier => _notifier;
+
+        public void SetNotifier(Services.NotificationManager notifier)
+        {
+            _notifier = notifier;
+        }
+
         /// <summary>Launch tat ca profile da luu (task 24.4 bulk launch).</summary>
         private void ExecuteLaunchAll()
         {

@@ -29,6 +29,7 @@ namespace AutoBossManager
             services.AddSingleton<ProfileManager>();
             services.AddSingleton<LogAggregator>();
             services.AddSingleton<ProcessLauncherService>();
+            services.AddSingleton<NotificationManager>();
             services.AddSingleton<AnalyticsEngine>();
             services.AddSingleton<SocketServer>();
 
@@ -42,8 +43,11 @@ namespace AutoBossManager
                 var socketServer = provider.GetRequiredService<SocketServer>();
                 var analytics = provider.GetRequiredService<AnalyticsEngine>();
                 var logAggregator = provider.GetRequiredService<LogAggregator>();
+                var notifier = provider.GetRequiredService<NotificationManager>();
+                mainViewModel.SetNotifier(notifier);
                 mainViewModel.SetProcessLauncher(provider.GetRequiredService<ProcessLauncherService>());
                 var mainWindow = new MainWindow(mainViewModel, logAggregator);
+                mainWindow.AttachNotifier(notifier);
 
             // Wire up SocketServer events to MainViewModel + AnalyticsEngine
             WireUpSocketServerEvents(socketServer, mainViewModel, analytics, logAggregator, mainWindow);

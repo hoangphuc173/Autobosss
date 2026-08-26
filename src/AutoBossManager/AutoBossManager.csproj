@@ -16,6 +16,8 @@
     <TargetFramework>net6.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <!-- NotifyIcon cho system tray notifications (task 18.3) -->
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
 </Project>

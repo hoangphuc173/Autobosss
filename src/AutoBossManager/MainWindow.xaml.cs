@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -114,6 +115,116 @@ namespace AutoBossManager
         private void BtnAnalyticsRefresh_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.Analytics.Refresh();
+        }
+
+        // ============ Notifications (task 18) ============
+
+        private System.Windows.Forms.NotifyIcon? _trayIcon;
+        private Services.NotificationManager? _notifier;
+
+        /// <summary>Goi tu App sau khi DI tao xong de nhan notification events.</summary>
+        public void AttachNotifier(Services.NotificationManager notifier)
+        {
+            _notifier = notifier;
+            notifier.OnNotificationAllowed += Notifier_OnNotificationAllowed;
+
+            // System tray icon (task 18.3)
+            try
+            {
+                _trayIcon = new System.Windows.Forms.NotifyIcon
+                {
+                    Icon = System.Drawing.SystemIcons.Application,
+                    Text = "AutoBoss Manager",
+                    Visible = true,
+                };
+                var menu = new System.Windows.Forms.ContextMenuStrip();
+                menu.Items.Add("Show", null, (_, _) => { Show(); WindowState = WindowState.Normal; });
+                menu.Items.Add("Exit", null, (_, _) => Close());
+                _trayIcon.ContextMenuStrip = menu;
+                _trayIcon.DoubleClick += (_, _) => { Show(); WindowState = WindowState.Normal; };
+            }
+            catch { }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            if (_trayIcon != null)
+            {
+                _trayIcon.Visible = false;
+                _trayIcon.Dispose();
+                _trayIcon = null;
+            }
+            if (_notifier != null) _notifier.OnNotificationAllowed -= Notifier_OnNotificationAllowed;
+            base.OnClosed(e);
+        }
+
+        private void Notifier_OnNotificationAllowed(object? sender, Services.NotificationManager.Notification n)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ShowToast(n);
+                if (n.HighPriority) ShowBalloon(n);
+            });
+        }
+
+        private void ShowToast(Services.NotificationManager.Notification n)
+        {
+            var border = new Border
+            {
+                Background = new System.Windows.Media.SolidColorBrush(
+                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(
+                        n.HighPriority ? "#EF4444EE" : "#3B82F6EE")),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(12, 8, 12, 8),
+                Margin = new Thickness(0, 4, 0, 0),
+                Child = new TextBlock
+                {
+                    Text = $"[{n.Type}] {n.Account}\n{n.Message}",
+                    Foreground = System.Windows.Media.Brushes.White,
+                    FontSize = 12,
+                    TextWrapping = TextWrapping.Wrap,
+                },
+            };
+
+            ToastPanel.Children.Add(border);
+            if (ToastPanel.Children.Count > 4)
+                ToastPanel.Children.RemoveAt(0);
+
+            // Auto-dismiss sau 5s (task 18.2)
+            var timer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(5),
+            };
+            timer.Tick += (_, _) =>
+            {
+                ToastPanel.Children.Remove(border);
+                timer.Stop();
+            };
+            timer.Start();
+        }
+
+        private void BtnHistory_Click(object sender, RoutedEventArgs e) => ShowNotificationHistory();
+
+        private void ShowBalloon(Services.NotificationManager.Notification n)
+        {
+            try
+            {
+                _trayIcon?.ShowBalloonTip(4000, $"[{n.Type}] {n.Account}", n.Message,
+                    System.Windows.Forms.ToolTipIcon.Warning);
+            }
+            catch { }
+        }
+
+        /// <summary>Hien history thong bao (task 18.5) - gan nut 🔔 goi.</summary>
+        public void ShowNotificationHistory()
+        {
+            if (_notifier == null) return;
+            var hist = _notifier.History;
+            var lines = hist.Count == 0
+                ? "(chưa có thông báo nào)"
+                : string.Join("\n", hist.Reverse().Select(h => $"[{h.TimeFormatted}] [{h.Type}] {h.Account}: {h.Message}"));
+            MessageBox.Show(this, lines, $"🔔 History ({hist.Count}/50)",
+                MessageBoxButton.OK, MessageBoxImage.None);
         }
     }
 }

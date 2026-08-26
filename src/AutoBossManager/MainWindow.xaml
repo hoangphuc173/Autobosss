@@ -196,6 +196,7 @@
                             Style="{StaticResource ActionButtonStyle}" Background="#7C3AED"
                             ToolTip="Ctrl+P - chan moi bot khoi farm (task 21.4)"/>
                     <Button Content="🛑 EMERGENCY STOP" Command="{Binding EmergencyStopCommand}" Style="{StaticResource DangerButtonStyle}" MinWidth="180"/>
+                    <Button Content="🔔" Click="BtnHistory_Click" ToolTip="Notification history" Style="{StaticResource ActionButtonStyle}" Background="#4A5568"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -403,5 +404,12 @@
                 </Border>
             </TabItem>
         </TabControl>
+
+        <!-- Toast notifications overlay (task 18.2): top-right -->
+        <Border DockPanel.Dock="Top" HorizontalAlignment="Right" VerticalAlignment="Top"
+                Margin="0,70,15,0" MaxWidth="360" IsHitTestVisible="False"
+                Panel.ZIndex="99">
+            <StackPanel x:Name="ToastPanel"/>
+        </Border>
     </DockPanel>
 </Window>

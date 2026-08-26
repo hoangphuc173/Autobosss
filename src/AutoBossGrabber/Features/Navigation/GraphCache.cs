@@ -27,9 +27,13 @@ public class GraphCache
     /// Initializes GraphCache with BepInEx config directory.
     /// Cache directory: BepInEx\config\AutoBossGrabber\
     /// </summary>
-    public GraphCache()
+    /// <param name="cacheDir">
+    /// Thu muc cache tuy chinh. Truyen null (mac dinh) de dung BepInEx\config\AutoBossGrabber;
+    /// truyen duong dan khac khi chay ngoai game (unit test voi tmp dir).
+    /// </param>
+    public GraphCache(string cacheDir = null)
     {
-        _cacheDir = Path.Combine(Paths.ConfigPath, "AutoBossGrabber");
+        _cacheDir = cacheDir ?? Path.Combine(Paths.ConfigPath, "AutoBossGrabber");
     }
     
     /// <summary>

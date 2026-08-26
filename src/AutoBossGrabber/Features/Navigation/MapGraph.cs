@@ -54,7 +54,7 @@ public class MapGraph
     /// <param name="sourceMapId">The map ID where the portal is located</param>
     /// <param name="destinationMapId">The map ID the portal leads to</param>
     /// <param name="portalPosition">The world position of the portal object</param>
-    public void AddEdge(int sourceMapId, int destinationMapId, Vector3 portalPosition)
+    public void AddEdge(int sourceMapId, int destinationMapId, MapPoint portalPosition)
     {
         // Ensure source map exists in adjacency list
         if (!_adjacencyList.ContainsKey(sourceMapId))

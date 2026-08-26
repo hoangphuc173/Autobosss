@@ -22,27 +22,32 @@ public class BFSPathfinder
     private MapNameResolver _nameResolver;
     private GraphCache _cache;
     private readonly object _graphLock = new object();
-    
+
+    // Provider lay map ID hien tai. Mac dinh doc tu game; inject ham khac khi can
+    // chay ngoai game (unit test, headless tooling).
+    private readonly Func<int> _currentMapIdProvider;
+
     /// <summary>
     /// Gets the current map graph. May be null if not yet initialized.
     /// </summary>
     public MapGraph Graph => _graph;
-    
+
     /// <summary>
     /// Initializes BFSPathfinder with lazy graph loading.
     /// Graph will be loaded from cache or built on first ComputePath() call.
     /// </summary>
-    public BFSPathfinder()
+    public BFSPathfinder(Func<int> currentMapIdProvider = null, GraphCache cache = null)
     {
-        _cache = new GraphCache();
+        _currentMapIdProvider = currentMapIdProvider ?? PathfinderGameAPI.GetCurrentMapId;
+        _cache = cache ?? new GraphCache();
         _nameResolver = new MapNameResolver();
         _graph = null; // Lazy initialization
     }
-    
+
     /// <summary>
     /// Computes shortest path from current map to target map.
     /// Thread-safe: can be called from any thread.
-    /// 
+    ///
     /// Requirements: 2.1, 4.1, 11.2
     /// </summary>
     /// <param name="targetMapName">Human-readable map name (case-insensitive)</param>
@@ -51,9 +56,9 @@ public class BFSPathfinder
     {
         // Ensure graph is loaded (from cache or fresh build)
         EnsureGraphLoaded();
-        
+
         // Get current map ID from game
-        int currentMapId = PathfinderGameAPI.GetCurrentMapId();
+        int currentMapId = _currentMapIdProvider();
         
         // Resolve target map name to ID
         int targetMapId = _nameResolver.Resolve(targetMapName);
@@ -70,7 +75,7 @@ public class BFSPathfinder
         lock (_graphLock)
         {
             var sw = Stopwatch.StartNew();
-            var path = BFS(currentMapId, targetMapId);
+            var path = FindPath(_graph, currentMapId, targetMapId);
             sw.Stop();
             
             if (path != null)
@@ -88,59 +93,65 @@ public class BFSPathfinder
     }
     
     /// <summary>
-    /// Performs breadth-first search from source to destination.
-    /// Guarantees shortest path discovery.
-    /// 
+    /// Performs breadth-first search on a graph from source to destination.
+    /// PURE FUNCTION: khong doc game state, khong dung static nao -> de unit test.
+    /// Guarantees shortest path discovery (unweighted graph).
+    ///
     /// Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.7, 2.8
     /// </summary>
+    /// <param name="graph">Graph to search</param>
     /// <param name="source">Source map ID</param>
     /// <param name="destination">Destination map ID</param>
-    /// <returns>Path as list of map IDs, or null if unreachable</returns>
-    private List<int> BFS(int source, int destination)
+    /// <returns>Path as list of map IDs (source first), or null if unreachable</returns>
+    public static List<int> FindPath(MapGraph graph, int source, int destination)
     {
+        if (graph == null)
+        {
+            return null;
+        }
+
         // Edge case: source == destination (Requirement 2.8)
         if (source == destination)
         {
             return new List<int> { source };
         }
-        
+
         // Check if source exists in graph
-        if (!_graph.ContainsMap(source))
+        if (!graph.ContainsMap(source))
         {
-            Plugin.Log.LogWarning($"[BFSPathfinder] Source map {source} not in graph");
             return null;
         }
-        
+
         // BFS data structures
         var queue = new Queue<int>();
         var visited = new HashSet<int>();
         var parent = new Dictionary<int, int>();
-        
+
         // Initialize BFS
         queue.Enqueue(source);
         visited.Add(source);
-        
+
         // BFS level-order traversal (Requirement 2.2)
         while (queue.Count > 0)
         {
             int current = queue.Dequeue();
-            
+
             // Explore all neighbors
-            foreach (var edge in _graph.GetEdges(current))
+            foreach (var edge in graph.GetEdges(current))
             {
                 int neighbor = edge.DestinationMapId;
-                
+
                 // Skip if already visited (Requirement 2.4 - avoid cycles)
                 if (visited.Contains(neighbor))
                 {
                     continue;
                 }
-                
+
                 // Mark as visited and track parent
                 visited.Add(neighbor);
                 parent[neighbor] = current;
                 queue.Enqueue(neighbor);
-                
+
                 // Check if we reached destination
                 if (neighbor == destination)
                 {
@@ -148,7 +159,7 @@ public class BFSPathfinder
                 }
             }
         }
-        
+
         // No path found (Requirement 2.5 - handle unreachable destination)
         return null;
     }
@@ -162,7 +173,7 @@ public class BFSPathfinder
     /// <param name="source">Source map ID</param>
     /// <param name="destination">Destination map ID</param>
     /// <returns>Path from source to destination</returns>
-    private List<int> ReconstructPath(Dictionary<int, int> parent, int source, int destination)
+    private static List<int> ReconstructPath(Dictionary<int, int> parent, int source, int destination)
     {
         var path = new List<int>();
         int current = destination;

@@ -1,203 +1,67 @@
-# AutoBossGrabber Phase 3 - Complete Package
+# AutoBossSystem
 
-**Version:** 2.0.0
-**Status:** ? Production Ready
-**Build:** 0 Errors
+Hệ thống auto boss hunt cho game Unity IL2CPP **"Vũ Trụ Đại Chiến"** (BepInEx 6), gồm bot plugin chạy trong game + ứng dụng WPF quản lý nhiều bot qua TCP IPC.
 
----
+## Kiến trúc
 
-## ?? QUICK START
+```
+AutoBossManager (WPF, net6.0-windows)          AutoBossGrabber (BepInEx plugin, net6.0)
+┌─────────────────────────────┐   TCP 28081   ┌──────────────────────────────────┐
+│ SocketServer  ←→ Dashboard  │◄─────────────►│ SocketClient (heartbeat, command)│
+│ ProfileManager (DPAPI pass) │  line-JSON    │ AutoBossRunner (state machine)   │
+│ AnalyticsEngine (24h window)│               │ MessageHook (Harmony packet)     │
+│ MainViewModel + BotInstance │               │ BFS Pathfinder + ZoneSwitcher    │
+└─────────────────────────────┘               └──────────────────────────────────┘
+                    ▲                    ▲
+                    └── AutoBossShared ──┘  (IpcMessage, BotProfile, enums - single source of truth)
+AutoBossLauncher (WinForms): chọn account → launch game → nhận log qua named pipe.
+```
 
-1. **Deploy:** Read \DEPLOY_QUICK.txt\ (2 minutes)
-2. **Test:** Follow \TESTING_GUIDE.md\ 
-3. **Enjoy:** TELEPORT_TO_MAP command ready!
+**Luồng chính:** Manager mở TCP server port `28081` → mỗi game instance chạy plugin tự kết nối → heartbeat 3s mang stats, STATUS_UPDATE 5s cập nhật dashboard → lệnh điều khiển (`START_FARMING`, `TELEPORT_TO_MAP`, `SWITCH_ZONE`...) đi xuống và được thực thi trên main thread của Unity.
 
----
+## Cấu trúc thư mục
 
-## ?? DOCUMENTATION INDEX
+| Thư mục | Nội dung |
+|---|---|
+| `src/AutoBossGrabber/` | BepInEx plugin: Core (Plugin, SocketClient, GameAPI), Features (Runner, Navigation...), Hooks, UI, Utils |
+| `src/AutoBossManager/` | WPF app: Services, ViewModels, Helpers |
+| `src/AutoBossShared/` | Model IPC chung cho cả 2 phía |
+| `src/AutoBossLauncher/` | WinForms launcher đa account |
+| `tests/AutoBoss.Tests/` | xUnit tests — chạy được bằng `dotnet test` (không cần game) |
+| `libs/` | DLL tham chiếu biên dịch (BepInEx core + interop) |
+| `runtime/` | Bản cài game đầy đủ (gitignored — không track) |
+| `deploy/` | `deploy.ps1` build + copy plugin vào BepInEx/plugins |
+| `docs/` | Tài liệu kỹ thuật + archive lịch sử |
+| `tools/` | Codemod/legacy scripts (tham khảo) |
 
-### ?? Getting Started:
-- **DEPLOY_QUICK.txt** - Quick deployment (recommended first read)
-- **DEPLOYMENT_GUIDE.md** - Full deployment manual with troubleshooting
+## Build & Test
 
-### ?? Testing:
-- **TESTING_GUIDE.md** - Test procedures, checklists, debug tips
+```powershell
+dotnet build AutoBossSystem.sln -c Release     # build tất cả
+dotnet test  tests\AutoBoss.Tests\AutoBoss.Tests.csproj   # chạy unit test
+```
 
-### ?? Technical:
-- **ARCHITECTURE.md** - System design, data flow, diagrams
-- **API_REFERENCE.md** - Complete API documentation
+Yêu cầu: .NET 6 SDK, Windows.
 
-### ?? Reports:
-- **PHASE3_COMPLETE.md** - Phase 3 completion summary
-- **FINAL_COMPLETION_REPORT.md** - Comprehensive final report
+## Deploy
 
----
+```powershell
+.\deploy\deploy.ps1                              # tự tìm game trong Steam library
+.\deploy\deploy.ps1 -GamePath "D:\Games\VuTu"    # chỉ định game
+.\deploy\deploy.ps1 -Configuration Debug         # deploy bản Debug
+```
 
-## ?? WHAT'S INCLUDED
+Script tự build nếu thiếu DLL, backup bản cũ trước khi ghi đè, dọn cache BFS.
 
-### Built DLLs (Ready to Deploy):
-\\\
-source/bin/Debug/net6.0/
-  +-- AutoBossGrabber.dll (332 KB)
-  +-- AutoBossShared.dll (19.5 KB)
-\\\
+## Chạy
 
-### Source Code:
-\\\
-source/AutoBoss/Navigation/
-  +-- BFSPathfinder.cs          [Core pathfinding]
-  +-- MapGraph.cs               [Graph structure]
-  +-- NavigationController.cs   [Portal traversal]
-  +-- GraphCache.cs             [Persistence]
-  +-- MapNameResolver.cs        [Name mapping]
-  +-- PathfinderGameAPI.cs      [Game integration]
-  +-- PortalEdge.cs             [Data structures]
-  +-- CacheData.cs              [Serialization]
-\\\
+1. `runtime\Vũ Trụ Đại Chiến.exe` (hoặc game đã cài BepInEx) — plugin tự nạp, nhấn **F1** bật/tắt bot
+2. Mở `src\AutoBossManager\bin\Release\net6.0-windows\AutoBossManager.exe` — server khởi động cùng app
+3. Hotkeys trong game: `F2` dump UI · `F3` test teleport · `F4` test chuyển khu · `F5` về nhà · `F6` dump network class
 
----
+## Tài liệu chi tiết
 
-## ? FEATURES
-
-### Phase 3: BFS Pathfinder
-- ? Intelligent map navigation
-- ? Automatic pathfinding (BFS algorithm)
-- ? Portal discovery & traversal
-- ? Cache system (fast repeated paths)
-- ? Vietnamese/English map names
-- ? IPC commands: TELEPORT_TO_MAP, INVALIDATE_CACHE
-
-### Previous Phases:
-- ? Phase 1: Core IPC (socket communication)
-- ? Phase 2: Manager integration (multi-bot)
-
----
-
-## ?? USAGE EXAMPLE
-
-### From Manager (Python):
-\\\python
-import socket, json
-
-# Connect to bot
-sock = socket.socket()
-sock.connect(('localhost', 5000))
-
-# Teleport command
-command = {
-    "MessageType": "COMMAND",
-    "Command": "TELEPORT_TO_MAP",
-    "Payload": {"targetMap": "G?ng"}
-}
-
-sock.send(json.dumps(command).encode() + b'\n')
-# Bot will pathfind and navigate automatically!
-\\\
-
----
-
-## ?? PROJECT STATS
-
-- **Lines of Code:** ~5,500+
-- **Phase 3 New Code:** ~1,200 lines
-- **Files Created:** 8 (Phase 3) + 7 (documentation)
-- **Build Time:** ~1.5 seconds
-- **Build Status:** ? 0 Errors
-
----
-
-## ?? SYSTEM REQUIREMENTS
-
-- **Game:** BepInEx 5.x compatible
-- **Runtime:** .NET 6.0
-- **OS:** Windows
-- **Dependencies:** Newtonsoft.Json, UnityEngine
-
----
-
-## ?? TROUBLESHOOTING
-
-**Issue:** Plugin not loading
-? Check BepInEx installed, DLLs not blocked
-
-**Issue:** No path found  
-? Verify map name, check cache file, try INVALIDATE_CACHE
-
-**Issue:** Navigation not working
-? Check logs for portal discovery, verify GameAPI methods
-
-**Full troubleshooting:** See DEPLOYMENT_GUIDE.md
-
----
-
-## ?? ARCHITECTURE HIGHLIGHTS
-
-\\\
-Manager (Python)
-    �
-    +-? Bot 1 (BepInEx Plugin)
-    �     +-? BFS Pathfinder
-    �           +-? MapGraph (cached)
-    �           +-? BFS Algorithm
-    �           +-? NavigationController
-    �
-    +-? Bot 2, Bot 3, Bot N...
-\\\
-
-**Key Design:**
-- Graph-based pathfinding
-- Lazy initialization
-- Cache persistence
-- Thread-safe operations
-- Async navigation
-
----
-
-## ? COMPLETION STATUS
-
-| Component | Status |
-|-----------|--------|
-| Code | ? 100% |
-| Build | ? 0 Errors |
-| Integration | ? Complete |
-| Documentation | ? Comprehensive |
-| Testing | ? Ready (needs in-game) |
-
----
-
-## ?? DEPLOYMENT CHECKLIST
-
-- [ ] Read DEPLOY_QUICK.txt
-- [ ] Copy DLLs to BepInEx/plugins
-- [ ] Launch game
-- [ ] Check BepInEx console
-- [ ] Test Manager connection
-- [ ] Send TELEPORT_TO_MAP command
-- [ ] Verify navigation works
-- [ ] Check cache file created
-
----
-
-## ?? LEARN MORE
-
-- **Architecture:** See ARCHITECTURE.md for system design
-- **API Usage:** See API_REFERENCE.md for commands
-- **Development:** See source code comments (inline docs)
-
----
-
-## ?? PROJECT COMPLETE
-
-**All tasks finished:**
-? Implementation
-? Integration  
-? Testing guides
-? Documentation
-? Deployment ready
-
-**Status:** Production Ready ??
-
----
-
-*AutoBossGrabber v2.0.0 - Phase 3 Complete*
-*Generated: 2026-08-23 01:33:46*
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — thiết kế hệ thống
+- [docs/API_REFERENCE.md](docs/API_REFERENCE.md) — giao thức IPC & lệnh điều khiển
+- [docs/TUNING_GUIDE.md](docs/TUNING_GUIDE.md) — tinh chỉnh thông số bot
+- [docs/OPTIMIZATION_SUMMARY.md](docs/OPTIMIZATION_SUMMARY.md), [docs/PERFORMANCE_COMPARISON.md](docs/PERFORMANCE_COMPARISON.md) — tối ưu hiệu năng

@@ -67,8 +67,10 @@ namespace AutoBossManager
             // Status updates - update bot instance state
             socketServer.OnStatusUpdate += (sender, e) =>
             {
+                Console.WriteLine($"[App] OnStatusUpdate: {e.State.InstanceId} map='{e.State.CurrentMap}' zone={e.State.CurrentZone}");
                 mainWindow.Dispatcher.Invoke(() =>
                 {
+                    mainViewModel.AppendLog("Info", $"STATUS_UPDATE map='{e.State.CurrentMap}' zone={e.State.CurrentZone} state={e.State.CurrentState}", e.State.InstanceId);
                     mainViewModel.UpdateBotInstance(e.State);
                 });
             };

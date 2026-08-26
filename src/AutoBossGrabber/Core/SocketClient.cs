@@ -668,8 +668,11 @@ public class SocketClient : MonoBehaviour
         {
             var runner = Plugin.Instance.Runner;
             string stateStr = runner != null ? runner.State.ToString() : AutoBossState.Idle.ToString();
-            string mapName = "Unknown";
-            try { mapName = GameAPI.GetCurrentMapName() ?? "Unknown"; } catch { }
+            string mapName = "";
+            try { mapName = GameAPI.GetCurrentMapFromMiniMap(); } catch { }
+            if (string.IsNullOrWhiteSpace(mapName))
+                try { mapName = GameAPI.GetCurrentMapName() ?? "Unknown"; } catch { }
+            if (string.IsNullOrWhiteSpace(mapName)) mapName = "Unknown";
             int zone = 0;
             try { zone = GameAPI.GetCurrentZoneIndexFromHUD(); } catch { }
             float hp = 100f;
